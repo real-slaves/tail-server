@@ -40,3 +40,5 @@ function removeUser(id) {
 function getUserIndex(id) {
     return room.users.findIndex(element => element.id == id)
 }
+
+app.all("*", (req, res) => res.send("Hello World"))
