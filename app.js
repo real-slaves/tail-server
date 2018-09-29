@@ -19,7 +19,7 @@ io.on('connection', socket => {
         removeUser(socket.id)
     })
 
-    io.emit("update", room)
+    setInterval(() => io.emit("update", room), 10)
 })
 
 function addUser(id) {
