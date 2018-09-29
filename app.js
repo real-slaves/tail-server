@@ -3,6 +3,8 @@ const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io')(server)
 
+app.use(express.static('/game'))
+
 server.listen(process.env.PORT || 8080)
 
 let room = {
@@ -19,7 +21,9 @@ io.on('connection', socket => {
         removeUser(socket.id)
     })
 
-    setInterval(() => io.emit("update", room), 10)
+    setInterval(() => {
+        io.emit("update", room)
+    }, 50)
 })
 
 function addUser(id) {
@@ -29,6 +33,7 @@ function addUser(id) {
 function updateUser(id, data) {
     let userIndex = getUserIndex(id)
     room.users[userIndex] = data
+    room.users[userIndex].id = id
 }
 
 function removeUser(id) {
@@ -40,5 +45,3 @@ function removeUser(id) {
 function getUserIndex(id) {
     return room.users.findIndex(element => element.id == id)
 }
-
-app.all("*", (req, res) => res.send("Hello World"))
