@@ -52,6 +52,9 @@ function updateUser(id, data) {
 
 function removeUser(id) {
     let userIndex = getUserIndex(id)
+    if (game.users[userIndex].roomid != -1 && game.room.status != 0)
+	game.users.find(element => element.roomid == -1).roomid = game.users[userIndex].roomid
+	
     game.users.splice(userIndex, 1)
 }
 
