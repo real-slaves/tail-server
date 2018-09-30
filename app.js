@@ -31,7 +31,7 @@ io.on('connection', socket => {
 		users: game.users.filter(element => element.roomid == game.users[getUserIndex(socket.id)].roomid), 
 		room: game.room
 	})
-    }, 100)
+    }, 50)
 })
 
 function addUser(id) {
@@ -52,14 +52,14 @@ function updateUser(id, data) {
 
 function removeUser(id) {
     let userIndex = getUserIndex(id)
-    if (game.users[userIndex].roomid != -1 && game.room.status != 0)
-	game.users.find(element => element.roomid == -1).roomid = game.users[userIndex].roomid
+    if (getRoomSNumberOfUser(-1) != 0 && game.users[userIndex].roomid != -1 && game.room.status == 0)
+	game.users[game.users.findIndex(element => element.roomid == -1)].roomid = 0
 	
     game.users.splice(userIndex, 1)
 }
 
 function startGame(roomid) {
-    game.room.status == 1
+//    game.room.status == 1
 }
 
 function getRoomSNumberOfUser(roomid) {
