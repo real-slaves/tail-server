@@ -21,27 +21,45 @@ io.on('connection', socket => {
     socket.on("update", data => {
         updateUser(socket.id, data)
     })
+    socket.on("died", data => {
+	userDied(data.hunter, data.target)
+    })
     socket.on("disconnect", data => {
         removeUser(socket.id)
+	clearInterval(sendData)
     })
     
     let sendData = setInterval(() => {
 	console.log(game)
         socket.emit("update", { 
-		users: game.users.filter(element => element.roomid == game.users[getUserIndex(socket.id)].roomid), 
+		users: game.users.filter(element => element.roomid == game.users[getUserIndex(socket.id)].roomid /*  && element.live == 1 */), 
 		room: game.room
 	})
-    }, 2200)
+ 
+
+	//code for test
+
+	if (getRoomSNumberOfUser(0) <= 2)
+		game.room.status = 0;
+
+
+
+
+
+
+	//
+
+   }, 100)
 })
 
 function addUser(id) {
-    let numberOfUsers = 4
+    let numberOfUsers = 3
     if (getRoomSNumberOfUser(0) < numberOfUsers && game.room.status == 0) {
-	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: 0})
+	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], live: 1, roomid: 0})
 	if (getRoomSNumberOfUser(0) == numberOfUsers)
 	    startGame(0)
     } else {
-	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: -1})
+	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], live: 1, roomid: -1})
     }
 }
 
@@ -49,6 +67,12 @@ function updateUser(id, data) {
     let userIndex = getUserIndex(id)
     game.users[userIndex] = data
     game.users[userIndex].id = id
+}
+
+function userDied(hunter, target) {
+    game.room.foodchain[game.room.foodchain.findIndex(element => element.hunter == target)].hunter = hunter
+    game.room.foodchain.splice(game.room.foodchain.findIndex(element => element.target == target), 1)
+    game.users[game.users.findIndex(element => element.id == target)].live = 0
 }
 
 function removeUser(id) {
