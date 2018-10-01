@@ -10,7 +10,8 @@ server.listen(process.env.PORT || 8080)
 let game = {
 	users: [],
 	room: {
-		status: 0
+		status: 0,
+		foodchain: []
 	}
 }
 
@@ -22,7 +23,6 @@ io.on('connection', socket => {
     })
     socket.on("disconnect", data => {
         removeUser(socket.id)
-	clearInterval(sendData)
     })
     
     let sendData = setInterval(() => {
@@ -31,13 +31,14 @@ io.on('connection', socket => {
 		users: game.users.filter(element => element.roomid == game.users[getUserIndex(socket.id)].roomid), 
 		room: game.room
 	})
-    }, 50)
+    }, 2200)
 })
 
 function addUser(id) {
-    if (getRoomSNumberOfUser(0) < 4 && game.room.status == 0) {
+    let numberOfUsers = 4
+    if (getRoomSNumberOfUser(0) < numberOfUsers && game.room.status == 0) {
 	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: 0})
-	if (getRoomSNumberOfUser(0) == 4)
+	if (getRoomSNumberOfUser(0) == numberOfUsers)
 	    startGame(0)
     } else {
 	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: -1})
@@ -59,7 +60,17 @@ function removeUser(id) {
 }
 
 function startGame(roomid) {
-//    game.room.status == 1
+    game.room.status = 1
+    game.room.foodchain = makeFoodchain(game.users)
+}
+
+function makeFoodchain(users) {
+    let foodchain = []
+    for (let i=0; i<users.length - 1; i++)
+	foodchain.push({hunter: users[i].id, target: users[i+1].id})
+
+    foodchain.push({hunter: users[users.length - 1].id, target: users[0].id})   
+    return foodchain
 }
 
 function getRoomSNumberOfUser(roomid) {
