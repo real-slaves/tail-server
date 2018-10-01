@@ -25,6 +25,8 @@ io.on('connection', socket => {
 	userDied(data.hunter, data.target)
     })
     socket.on("disconnect", data => {
+	if (game.users[getUserIndex(socket.id)].roomid != -1)
+	    userDied(game.foodchain.find(element => element.target == socket.id).hunter, socket.id)
         removeUser(socket.id)
 	clearInterval(sendData)
     })
