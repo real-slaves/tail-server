@@ -11,8 +11,15 @@ let game = {
 	users: [],
 	room: {
 		status: 0,
-		foodchain: []
-	}
+		foodchain: [],
+		blocks: []
+	},
+	rooms: new Array(10).fill({
+		status: 0,
+		foodchain: [],
+		blocks: [],
+		roomid: null
+	})
 }
 
 io.set('origins', '*:*')
@@ -89,6 +96,28 @@ function removeUser(id) {
 	game.users[game.users.findIndex(element => element.roomid == -1)].roomid = 0
 	
     game.users.splice(userIndex, 1)
+}
+
+function createNewRoom(roomid) {
+
+}
+
+function removeRoom(roomid) {
+
+}
+
+function getRoom(roomid) {
+	return game.rooms.find(element => element.roomid == roomid)
+}
+
+function setBlocks(roomid) {
+	//setting blocks in the room
+    for (let i = 0; i < 10; i++)
+	putBlock(roomid)	
+}
+
+function putBlock(roomid) {
+
 }
 
 function startGame(roomid) {
