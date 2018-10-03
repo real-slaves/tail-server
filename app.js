@@ -77,7 +77,7 @@ function userDied(hunter, target) {
 function userWon(winner) {
     console.log(game.users.filter(element => element.roomid == winner.roomid).length)
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => {
-	game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
+		    game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
 	io.to(element.id).emit("gameEnd", {winner: winner} )
     })
     game.room.status = 0    
@@ -98,11 +98,15 @@ function startGame(roomid) {
 
 function makeFoodchain(users) {
     let foodchain = []
-    for (let i=0; i<users.length - 1; i++)
-	foodchain.push({hunter: users[i].id, target: users[i+1].id})
-
-    foodchain.push({hunter: users[users.length - 1].id, target: users[0].id})   
+    let userlist = getRoomSUserList(0)
+    for (let i=0; i<userlist.length; i++) 
+	foodchain.push({hunter: userlist[i].id, target: userlist[i != userlist.length - 1 ? i+1 : 0].id})
+     
     return foodchain
+}
+
+function getRoomSUserList(roomid) {
+    return game.users.filter(element => element.roomid == roomid)
 }
 
 function getRoomSNumberOfUser(roomid) {
