@@ -3,28 +3,24 @@ const app = express()
 const server = require('http').Server(app)
 const io = require('socket.io')(server)
 
-app.use(express.static('./game'))
+app.use(express.static('./DiCon2018'))
 
 server.listen(process.env.PORT || 8080)
 
 let game = {
 	users: [],
-	room: {
+	rooms: new Array(1).fill({
 		status: 0,
 		foodchain: [],
 		blocks: []
-	},
-	rooms: new Array(10).fill({
-		status: 0,
-		foodchain: [],
-		blocks: [],
-		roomid: null
 	})
 }
 
 io.set('origins', '*:*')
 io.on('connection', socket => {
-    addUser(socket.id)
+    socket.on("join", data => {
+        addUser(socket.id)
+    })
     socket.on("update", data => {
         updateUser(socket.id, data)
     })
@@ -33,27 +29,28 @@ io.on('connection', socket => {
     })
     socket.on("disconnect", data => {
 	let user = game.users.find(element => element.id == socket.id)
-	if (user.roomid >= 0 && game.room.status == 1 && user.isDead == undefined)
-		userDied(game.room.foodchain.find(element => element.target == socket.id).hunter, user.id)
+	if (user == undefined)
+		return;
+	if (user.roomid >= 0 && game.rooms[0].status == 1 && user.isDead == undefined)
+		userDied(null, user.id)
 	removeUser(socket.id)
-	clearInterval(sendData)
     })
-    
-    let sendData = setInterval(() => {
-	console.log(game)
-	if (isGameOver(0) && game.room.status == 1)
-		userWon(game.users.find(element => element.roomid == 0 && element.isDead == undefined))
-
-        socket.emit("update", { 
-		users: game.users.filter(element => element.roomid == game.users[getUserIndex(socket.id)].roomid), 
-		room: game.room
-	})
-   }, 100)
 })
+
+setInterval(() => {
+	console.log(game)
+	if (isGameOver(0))
+		userWon(game.users.find(element => element.roomid == 0 && element.isDead == false))
+
+	game.users.forEach(element => io.to(element.id).emit("update", {
+		users: getRoomSUserList(game.users[getUserIndex(element.id)].roomid),
+		room: game.rooms[0]
+	}))
+}, 100)
 
 function addUser(id) {
     let numberOfUsers = 4
-    if (getRoomSNumberOfUser(0) < numberOfUsers && game.room.status == 0) {
+    if (getRoomSNumberOfUser(0) < numberOfUsers && game.rooms[0].status == 0) {
 	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: 0, isDead: false})
 	if (getRoomSNumberOfUser(0) == numberOfUsers)
 	    startGame(0)
@@ -70,44 +67,51 @@ function updateUser(id, data) {
 
 function userDied(hunter, target) {
     io.to(target).emit("died")
-    if (game.room.foodchain.find(element => element.hunter == target) && game.room.foodchain.find(element => element.target == target))
+    if (hunter == null)
+	return;
+
+    if (game.rooms[0].foodchain.find(element => element.hunter == target) && game.rooms[0].foodchain.find(element => element.target == target))
 	console.log("")	
     else
 	return;
 
-    game.room.foodchain.splice(game.room.foodchain.findIndex(element => element.target == target), 1)
-    game.room.foodchain[game.room.foodchain.findIndex(element => element.hunter == target)].hunter = hunter   
+    game.rooms[0].foodchain.splice(game.rooms[0].foodchain.findIndex(element => element.target == target), 1)
+    game.rooms[0].foodchain[game.rooms[0].foodchain.findIndex(element => element.hunter == target)].hunter = hunter   
     game.users[game.users.findIndex(element => element.id == target)].isDead = true
-    console.log(game.room.foodchain)
 }
 
 function userWon(winner) {
-    console.log(game.users.filter(element => element.roomid == winner.roomid).length)
-    game.users.filter(element => element.roomid == winner.roomid).forEach(element => {
-		    game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
+    getRoomSUserList(winner.id).forEach(element => {
+	game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
+	game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
 	io.to(element.id).emit("gameEnd", {winner: winner} )
     })
-    game.room.status = 0    
+    game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
+    game.rooms[0].status = 0
 }
 
 function removeUser(id) {
     let userIndex = getUserIndex(id)
-    if (getRoomSNumberOfUser(-1) != 0 && game.users[userIndex].roomid != -1 && game.room.status == 0)
+    if (getRoomSNumberOfUser(-1) != 0 && game.users[userIndex].roomid != -1 && game.rooms[0].status == 0)
 	game.users[game.users.findIndex(element => element.roomid == -1)].roomid = 0
 	
     game.users.splice(userIndex, 1)
 }
 
 function createNewRoom(roomid) {
-
+	game.rooms.push({status: 0, blocks: [], foodchain: [], roomid: roomid})
 }
 
 function removeRoom(roomid) {
-
+	game.rooms.splice(getRoomIndex(roomid), 1)
 }
 
 function getRoom(roomid) {
 	return game.rooms.find(element => element.roomid == roomid)
+}
+
+function getRoomIndex(roomid) {
+	return game.rooms.findIndex(element => element.roomid == roomid)
 }
 
 function setBlocks(roomid) {
@@ -121,8 +125,8 @@ function putBlock(roomid) {
 }
 
 function startGame(roomid) {
-    game.room.status = 1
-    game.room.foodchain = makeFoodchain(game.users)
+    game.rooms[roomid].status = 1
+    game.rooms[roomid].foodchain = makeFoodchain(game.users)
 }
 
 function makeFoodchain(users) {
@@ -147,5 +151,5 @@ function getUserIndex(id) {
 }
 
 function isGameOver(roomid) {
-    return game.users.filter(element => element.roomid == roomid && element.isDead == undefined).length == 1
+    return game.users.filter(element => element.roomid == roomid && element.isDead == false).length == 1 && game.rooms[roomid].status == 1
 }
