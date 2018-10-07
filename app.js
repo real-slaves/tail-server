@@ -19,7 +19,7 @@ let game = {
 io.set('origins', '*:*')
 io.on('connection', socket => {
     socket.on("join", data => {
-        addUser(socket.id)
+        addUser(1, socket.id)
     })
     socket.on("update", data => {
         updateUser(socket.id, data)
@@ -55,12 +55,14 @@ function monitoring() {
     console.log(game.rooms[0].foodchain)
 }
 
-function addUser(id) {
+function addUser(access, id) {
     let numberOfUsers = 4
-    game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: game.rooms.length - 1, isDead: false})
-    if (getRoomSNumberOfUser(game.rooms.length - 1) == numberOfUsers) {
-        startGame(game.rooms.length - 1)
-        createNewRoom()
+    if (access == 1) {
+	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: game.rooms.length - 1, isDead: false})
+	if (getRoomSNumberOfUser(game.rooms.length - 1) == numberOfUsers) {
+            startGame(game.rooms.length - 1)
+            createNewRoom()
+	}
     }
 }
 
@@ -102,12 +104,12 @@ function removeUser(id) {
     game.users.splice(getUserIndex(id), 1)
 }
 
-function createNewRoom() {
-	game.rooms.push({status: 0, blocks: [], foodchain: []})
+function createNewRoom(access) {
+	game.rooms.push({status: 0, blocks: [], foodchain: [], access: access})
 }
 
 function removeRoom(roomid) {
-	game.rooms[roomid] = {status: 0, blocks: [], foodchain: []}
+	game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], access: 1}
 }
 
 function getRoom(roomid) {
