@@ -7,6 +7,11 @@ app.use(express.static('./DiCon2018'))
 
 server.listen(process.env.PORT || 8080)
 
+
+
+
+
+
 let game = {
 	users: [],
 	rooms: new Array(1).fill({
@@ -18,37 +23,33 @@ let game = {
 
 io.set('origins', '*:*')
 io.on('connection', socket => {
-    socket.on("join", data => {
-        addUser(1, socket.id)
-    })
-    socket.on("update", data => {
-        updateUser(socket.id, data)
-    })
-    socket.on("died", data => {
-	userDied(data.hunter, data.target)
-    })
-    socket.on("disconnect", data => {
-	let user = getUser(socket.id)
-	if (user == undefined)
-		return;
-	if (user.roomid >= 0 && game.rooms[user.roomid].status == 1 && user.isDead == undefined)
-		userDied(null, user.id)
-	removeUser(socket.id)
-    })
+    socket.on("join", data => addUser(1, socket.id))
+    socket.on("update", data => updateUser(socket.id, data))
+    socket.on("died", data => userDied(data.hunter, data.target))
+    socket.on("disconnect", data => userDisconnected(socket.id))
 })
 
 setInterval(() => {
     monitoring()
+    sendGameData()
+    checkGameOver()
+}, 100)
+
+
+
+
+
+
+function checkGameOver() {
+    game.rooms.filter((element, index) => isGameOver(index)).forEach(element => userWon(game.users.find(element => element.roomid == index && element.isDead == false)))
+}
+
+function sendGameData() {
     game.users.forEach(element => io.to(element.id).emit("update", {
 	users: getRoomSUserList(getUser(element.id).roomid),
 	room: game.rooms[element.roomid]
     }))
-	
-    game.rooms.forEach((element, index) => {
-	if (isGameOver(index))
-		userWon(game.users.find(element => element.roomid == index && element.isDead == false))
-    })
-}, 100)
+}
 
 function monitoring() {
     console.log(game)
@@ -87,6 +88,16 @@ function userDied(hunter, target) {
     game.users[getUserIndex(target)].isDead = true
 }
 
+function userDisconnected(id) {
+	let user = getUser(id)
+	if (user == undefined)
+		return;
+
+	if (user.roomid >= 0 && game.rooms[user.roomid].status == 1 && user.isDead == undefined)
+		userDied(null, id)
+	removeUser(id)
+}
+
 function userWon(winner) {
     removeRoom(winner.roomid)
     getRoomSUserList(winner.id).forEach(element => {
@@ -95,6 +106,30 @@ function userWon(winner) {
 	io.to(element.id).emit("gameEnd", {winner: winner} )
     })
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
+}
+
+function setBlocks(roomid) {
+    //setting blocks in the room
+    for (let i = 0; i < 10; i++)
+	putBlock(roomid)	
+}
+
+function putBlock(roomid) {
+
+}
+
+function startGame(roomid) {
+    game.rooms[roomid].status = 1
+    game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
+}
+
+function makeFoodchain(users, roomid) {
+    let foodchain = []
+    let userlist = getRoomSUserList(roomid)
+
+    for (let i=0; i<userlist.length; i++) 
+	foodchain.push({hunter: userlist[i].id, target: userlist[i != userlist.length - 1 ? i+1 : 0].id})
+    return foodchain
 }
 
 function removeUser(id) {
@@ -118,30 +153,6 @@ function getRoom(roomid) {
 
 function getRoomIndex(roomid) {
 	return game.rooms.findIndex(element => element.roomid == roomid)
-}
-
-function setBlocks(roomid) {
-	//setting blocks in the room
-    for (let i = 0; i < 10; i++)
-	putBlock(roomid)	
-}
-
-function putBlock(roomid) {
-
-}
-
-function startGame(roomid) {
-    game.rooms[roomid].status = 1
-    game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
-}
-
-function makeFoodchain(users, roomid) {
-    let foodchain = []
-    let userlist = getRoomSUserList(roomid)
-    for (let i=0; i<userlist.length; i++) 
-	foodchain.push({hunter: userlist[i].id, target: userlist[i != userlist.length - 1 ? i+1 : 0].id})
-     
-    return foodchain
 }
 
 function getRoomSUserList(roomid) {
