@@ -31,6 +31,7 @@ setInterval(() => {
     monitoring()
     sendGameData()
     checkGameOver()
+    garbageCollect()
 }, 100)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -101,7 +102,7 @@ function userDisconnected(id) {
 }
 
 function userWon(winner) {
-    removeRoom(winner.roomid)
+    clearRoom(winner.roomid)
     getRoomSUserList(winner.id).forEach(element => {
 	game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
 	game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
@@ -147,8 +148,13 @@ function createNewRoom(access) {
     game.rooms.push({status: 0, blocks: [], foodchain: [], access: access})
 }
 
-function removeRoom(roomid) {
+function clearRoom(roomid) {
     game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], access: 1}
+}
+
+function garbageCollect() {
+    if (game.rooms[game.rooms.length - 1].status == 0 && getRoomSNumberOfUser(game.rooms.length - 1) == 0)
+	game.rooms.splice(game.rooms.length - 1, 1)
 }
 
 function getRoom(roomid) {
