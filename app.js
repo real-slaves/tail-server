@@ -7,10 +7,7 @@ app.use(express.static('./DiCon2018'))
 
 server.listen(process.env.PORT || 8080)
 
-
-
-
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
 let game = {
 	users: [],
@@ -35,13 +32,12 @@ setInterval(() => {
     checkGameOver()
 }, 100)
 
-
-
-
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
 function checkGameOver() {
-    game.rooms.filter((element, index) => isGameOver(index)).forEach(element => userWon(game.users.find(element => element.roomid == index && element.isDead == false)))
+    game.rooms.forEach((element, index) => {	
+	if (isGameOver(index)) userWon(game.users.find(element => element.roomid == index && element.isDead == false))	
+    })
 }
 
 function sendGameData() {
@@ -56,13 +52,21 @@ function monitoring() {
     console.log(game.rooms[0].foodchain)
 }
 
-function addUser(access, id) {
+function addUser(access, id, roomid) {
     let numberOfUsers = 4
     if (access == 1) {
 	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: game.rooms.length - 1, isDead: false})
 	if (getRoomSNumberOfUser(game.rooms.length - 1) == numberOfUsers) {
             startGame(game.rooms.length - 1)
             createNewRoom()
+	}
+    } else {
+	if (game.rooms[roomid].status == 0) {
+	    game.users.push({x: 0, y:0, id: id, rotation: 0, tail: [], roomid: roomid, isDead})
+	    if (getRoomSNumberOfUser(roomid) == numberOfUsers)
+		startGame(roomid)
+	} else {
+	    io.to(id).emit("full")
 	}
     }
 }
@@ -75,12 +79,8 @@ function updateUser(id, data) {
 
 function userDied(hunter, target) {
     io.to(target).emit("died")
-    if (!hunter)
-	return;
 
-    if (game.rooms[getUser(hunter).roomid].foodchain.find(element => element.hunter == target) && game.rooms[getUser(hunter).roomid].foodchain.find(element => element.target == target))
-	console.log("")	
-    else
+    if (!hunter || !game.rooms[getUser(hunter).roomid].foodchain.find(element => element.hunter == target) || !game.rooms[getUser(hunter).roomid].foodchain.find(element => element.target == target))
 	return;
 
     game.rooms[getUser(hunter).roomid].foodchain.splice(game.rooms[getUser(hunter).roomid].foodchain.findIndex(element => element.target == target), 1)
@@ -89,13 +89,12 @@ function userDied(hunter, target) {
 }
 
 function userDisconnected(id) {
-	let user = getUser(id)
-	if (user == undefined)
-		return;
+    let user = getUser(id)
+    if (user == undefined) return;
 
-	if (user.roomid >= 0 && game.rooms[user.roomid].status == 1 && user.isDead == undefined)
-		userDied(null, id)
-	removeUser(id)
+    if (user.roomid >= 0 && game.rooms[user.roomid].status == 1 && user.isDead == undefined)
+	userDied(null, id)
+    removeUser(id)
 }
 
 function userWon(winner) {
@@ -115,12 +114,14 @@ function setBlocks(roomid) {
 }
 
 function putBlock(roomid) {
-
+    game.rooms[roomid].blocks.push({})
 }
 
 function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
+
+    setBlocks(roomid)
 }
 
 function makeFoodchain(users, roomid) {
@@ -140,19 +141,19 @@ function removeUser(id) {
 }
 
 function createNewRoom(access) {
-	game.rooms.push({status: 0, blocks: [], foodchain: [], access: access})
+    game.rooms.push({status: 0, blocks: [], foodchain: [], access: access})
 }
 
 function removeRoom(roomid) {
-	game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], access: 1}
+    game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], access: 1}
 }
 
 function getRoom(roomid) {
-	return game.rooms.find(element => element.roomid == roomid)
+    return game.rooms.find(element => element.roomid == roomid)
 }
 
 function getRoomIndex(roomid) {
-	return game.rooms.findIndex(element => element.roomid == roomid)
+    return game.rooms.findIndex(element => element.roomid == roomid)
 }
 
 function getRoomSUserList(roomid) {
