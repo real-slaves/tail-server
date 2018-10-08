@@ -14,7 +14,8 @@ let game = {
 	rooms: new Array(1).fill({
 		status: 0,
 		foodchain: [],
-		blocks: []
+		blocks: [],
+		access: 1
 	})
 }
 
@@ -55,10 +56,12 @@ function monitoring() {
 function addUser(access, id, roomid) {
     let numberOfUsers = 4
     if (access == 1) {
-	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: game.rooms.length - 1, isDead: false})
-	if (getRoomSNumberOfUser(game.rooms.length - 1) == numberOfUsers) {
-            startGame(game.rooms.length - 1)
-            createNewRoom()
+	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.access == 1)
+	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: roomIndex, isDead: false})
+	if (getRoomSNumberOfUser(roomIndex) == numberOfUsers) {
+            startGame(roomIndex)
+            if (game.rooms.findIndex(element => element.status == 0 && element.access == 1) == -1)
+		createNewRoom()
 	}
     } else {
 	if (game.rooms[roomid].status == 0) {
