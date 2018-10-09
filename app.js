@@ -56,7 +56,6 @@ function sendGameData() {
 
 function monitoring() {
     console.log(game)
-    console.log(game.rooms[0].foodchain)
 }
 
 function addUser(access, id, roomid) {
@@ -158,7 +157,7 @@ function clearRoom(roomid) {
 }
 
 function garbageCollect() {
-    if (game.rooms[game.rooms.length - 1].status == 0 && getRoomSNumberOfUser(game.rooms.length - 1) == 0)
+    if (game.rooms.length > 1 && game.rooms[game.rooms.length - 1].status == 0 && getRoomSNumberOfUser(game.rooms.length - 1) == 0)
 	game.rooms.splice(game.rooms.length - 1, 1)
 }
 

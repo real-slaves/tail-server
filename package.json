@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "express": "~4.16.0",
-    "rpi-temperature": "^1.1.0",
     "socket.io": "^2.1.1"
   },
   "author": "",
