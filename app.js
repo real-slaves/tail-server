@@ -10,17 +10,18 @@ server.listen(process.env.PORT || 8080)
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
 let game = {
-	users: [],
-	rooms: new Array(1).fill({
-		status: 0,
-		foodchain: [],
-		blocks: [],
-		access: 1
-	})
+    users: [],
+    rooms: new Array(1).fill({
+	status: 0,
+	foodchain: [],
+	blocks: [],
+	access: 1
+    })
 }
 
 io.set('origins', '*:*')
 io.on('connection', socket => {
+    socket.on("getRoomList", data => sendRoomList(socket.id))
     socket.on("join", data => addUser(1, socket.id))
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.hunter, data.target))
@@ -35,6 +36,10 @@ setInterval(() => {
 }, 100)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+function sendRoomList(id) {
+    io.to(id).emit({rooms: game.rooms})
+}
 
 function checkGameOver() {
     game.rooms.forEach((element, index) => {	
