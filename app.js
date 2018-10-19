@@ -162,7 +162,10 @@ function clearRoom(roomid) {
 }
 
 function garbageCollect() {
-    if (game.rooms.length > 1 && game.rooms[game.rooms.length - 1].status == 0 && getRoomSNumberOfUser(game.rooms.length - 1) == 0)
+    if (game.rooms.length < 2)
+	return;
+
+    if (game.rooms[game.rooms.length - 1].status == 0 && game.rooms.filter((element, index) => getRoomSNumberOfUser(index) == 0).length > 1)
 	game.rooms.splice(game.rooms.length - 1, 1)
 }
 
