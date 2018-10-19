@@ -16,7 +16,8 @@ let game = {
 	foodchain: [],
 	blocks: [],
 	access: 1,
-	chat: []
+	chat: [],
+	numberOfUsers: 4
     })
 }
 
@@ -60,11 +61,10 @@ function monitoring() {
 }
 
 function addUser(access, id, roomid) {
-    let numberOfUsers = 4
     if (access == 1) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.access == 1)
 	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
-	if (getRoomSNumberOfUser(roomIndex) == numberOfUsers) {
+	if (getRoomSNumberOfUser(roomIndex) == game.rooms[roomid].numberOfUsers) {
             startGame(roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.access == 1) == -1)
 		createNewRoom()
@@ -72,7 +72,7 @@ function addUser(access, id, roomid) {
     } else {
 	if (game.rooms[roomid].status == 0) {
 	    game.users.push({x: 0, y:0, id: id, rotation: 0, tail: [], roomid: roomid, isDead: false, username: ""})
-	    if (getRoomSNumberOfUser(roomid) == numberOfUsers)
+	    if (getRoomSNumberOfUser(roomid) == game.rooms[roomid].numberOfUsers)
 		startGame(roomid)
 	} else {
 	    io.to(id).emit("full")
@@ -154,11 +154,11 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, blocks: [], foodchain: [], access: access, chat: []})
+    game.rooms.push({status: 0, blocks: [], foodchain: [], access: access, chat: []}, numberOfUsers: 4)
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], access: 1, chat: []}
+    game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], access: 1, chat: [], numberOfUsers: 4}
 }
 
 function garbageCollect() {
