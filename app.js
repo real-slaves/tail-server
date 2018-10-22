@@ -38,7 +38,7 @@ setInterval(() => {
 function chatPosted(roomid, data) {
     game.rooms[roomid].chat.unshift(data)
     if(game.rooms[roomid].chat.length > 10)
-	game.rooms[roomid].chat.shift()
+	game.rooms[roomid].chat.pop()
 }
 
 function sendRoomList(id) {
