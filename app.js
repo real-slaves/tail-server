@@ -59,7 +59,7 @@ function addUser(access, id, roomid) {
     if (access == 1) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.option.access == 1)
 	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
-	if (getRoomSNumberOfUser(roomIndex) == game.rooms[roomid].option.numberOfUsers) {
+	if (getRoomSNumberOfUser(roomIndex) == game.rooms[roomIndex].option.numberOfUsers) {
             startGame(roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
@@ -84,7 +84,10 @@ function updateUser(id, data) {
 function userDied(hunter, target) {
     io.to(target).emit("died")
 
-    if (!hunter || !game.rooms[getUser(hunter).roomid].foodchain.find(element => element.hunter == target) || !game.rooms[getUser(hunter).roomid].foodchain.find(element => element.target == target))
+    if(!game.rooms[getUser(hunter).roomid])
+	return;
+
+    if (!game.rooms[getUser(hunter).roomid].foodchain.find(element => element.hunter == target) || !game.rooms[getUser(hunter).roomid].foodchain.find(element => element.target == target))
 	return;
 
     game.rooms[getUser(hunter).roomid].foodchain.splice(game.rooms[getUser(hunter).roomid].foodchain.findIndex(element => element.target == target), 1)
@@ -103,9 +106,10 @@ function userDisconnected(id) {
 
 function userWon(winner) {
     clearRoom(winner.roomid)
-    getRoomSUserList(winner.id).forEach(element => {
+    getRoomSUserList(winner.roomid).forEach(element => {
 	game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
-	game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
+	if (game.users.findIndex(element => element.isDead != false != -1))
+	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
 	io.to(element.id).emit("gameEnd", {winner: winner} )
     })
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
