@@ -23,6 +23,7 @@ io.on('connection', socket => {
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.hunter, data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
+    socket.on("chatPost", data => chatPosted(getUser(roomid), data))
 })
 
 setInterval(() => {
@@ -33,6 +34,12 @@ setInterval(() => {
 }, 100)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+function chatPosted(roomid, data) {
+    game.rooms[roomid].chat.unshift(data)
+    if(game.rooms[roomid].chat.length > 10)
+	game.rooms[roomid].chat.shift()
+}
 
 function sendRoomList(id) {
     io.to(id).emit({rooms: game.rooms})
