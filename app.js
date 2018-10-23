@@ -126,14 +126,25 @@ function userWon(winner) {
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
 }
 
-function setBlocks(roomid) {
-    //setting blocks in the room
-    for (let i = 0; i < 10; i++)
-	putBlock(roomid)	
+function getDistanceBetween(x1, y1, x2, y2) {
+    return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 }
 
-function putBlock(roomid) {
+function setBlocks(roomid) {
+    //setting blocks in the room
+    for (let i = 0; i < 1; i++)
+	putBlock(0, 0, roomid)	
+}
+
+function putBlock(x, y, roomid) {
     game.rooms[roomid].blocks.push({})
+    Array(...game.getRoomSUserList(roomid), ...game.rooms[roomid].blocks).forEach(element => {
+	if (getDistanceBetween(element.x, element.y, x, y) < 50) {
+		game.rooms[roomid].blocks.pop()
+		putBlock(0, 0, roomid)
+		return
+	}
+    })
 }
 
 function startGame(roomid) {
