@@ -138,7 +138,7 @@ function userWon(winner) {
 function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
-    setObjects(roomid)
+//    setObjects(roomid)
 }
 
 function setObjects(roomid) {
@@ -151,7 +151,7 @@ function setObjects(roomid) {
 function putObject(x, y, roomid) {
     game.rooms[roomid].objects.push({x: x, y: y, type: getRandomNumber(0, 2)})
 
-    Array(...game.getRoomSUserList(roomid), ...game.rooms[roomid].objects).forEach(element => {
+    Array(...getRoomSUserList(roomid), ...game.rooms[roomid].objects).forEach(element => {
 	if (getDistanceBetween(element.x, element.y, x, y) < 50) {
 		game.rooms[roomid].objects.pop()
 		putObject(getRandomNumber(0, 2400), getRandomNumber(0, 2400), roomid)
