@@ -24,6 +24,7 @@ io.on('connection', socket => {
     socket.on("died", data => userDied(data.hunter, data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
     socket.on("chatPost", data => chatPosted(getUser(roomid), data))
+    socket.on("addTail", data => io.to(data.target).emit("addTail"))
 })
 
 setInterval(() => {
