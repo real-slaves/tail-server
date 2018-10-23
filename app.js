@@ -19,7 +19,7 @@ createNewRoom(1)
 io.set('origins', '*:*')
 io.on('connection', socket => {
     socket.on("getRoomList", data => sendRoomList(socket.id))
-    socket.on("join", data => addUser(1, socket.id))
+    socket.on("join", data => join(1, socket.id, data.roomid))
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.hunter, data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
@@ -62,10 +62,14 @@ function monitoring() {
     console.log(game)
 }
 
-function addUser(access, id, roomid) {
+function join(access, id, roomid) {
     if (access == 1) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.option.access == 1)
-	game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
+	if (game.users.find(element => element.roomid == id) == undefined)
+	     game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
+	else
+	     game.users[getUserIndex(id)].roomid = roomIndex
+
 	if (getRoomSNumberOfUser(roomIndex) == game.rooms[roomIndex].option.numberOfUsers) {
             startGame(roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
