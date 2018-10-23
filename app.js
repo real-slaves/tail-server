@@ -103,7 +103,7 @@ function monitoring() {
 }
 
 function sendGameData() {
-    game.users.forEach(element => io.to(element.id).emit("update", 
+    game.users.forEach(element => io.to(element.id).emit("update", { 
 	users: getRoomSUserList(getUser(element.id).roomid),
 	room: game.rooms[element.roomid]
     }))
