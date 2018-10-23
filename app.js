@@ -19,7 +19,7 @@ createNewRoom(1)
 io.set('origins', '*:*')
 io.on('connection', socket => {
     socket.on("getRoomList", data => sendRoomList(socket.id))
-    socket.on("join", data => join(1, socket.id, data.roomid))
+    socket.on("join", data => join(data.access, socket.id, data.roomid))
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.hunter, data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
