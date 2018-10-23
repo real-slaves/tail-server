@@ -130,28 +130,33 @@ function getDistanceBetween(x1, y1, x2, y2) {
     return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 }
 
-function setBlocks(roomid) {
-    //setting blocks in the room
-    for (let i = 0; i < 1; i++)
-	putBlock(0, 0, roomid)	
+function setObjects(roomid) {
+    for (let i = 0; i < 20; i++)
+	putObject(getRandomNumber(0, 2400), getRandomNumber(0, 2400), roomid)
+
+    putSpecialObjects(roomid)
 }
 
-function putBlock(x, y, roomid) {
-    game.rooms[roomid].blocks.push({})
-    Array(...game.getRoomSUserList(roomid), ...game.rooms[roomid].blocks).forEach(element => {
+function putObject(x, y, roomid) {
+    game.rooms[roomid].objects.push({x: x, y: y, type: getRandomNumber(0, 2)})
+    Array(...game.getRoomSUserList(roomid), ...game.rooms[roomid].objects).forEach(element => {
 	if (getDistanceBetween(element.x, element.y, x, y) < 50) {
-		game.rooms[roomid].blocks.pop()
-		putBlock(0, 0, roomid)
+		game.rooms[roomid].objects.pop()
+		putObject(getRandomNumber(0, 2400), getRandomNumber(0, 2400), roomid)
 		return
 	}
     })
+}
+
+function putSpecialObjects(roomid) {
+
 }
 
 function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
 
-    setBlocks(roomid)
+    setObjects(roomid)
 }
 
 function makeFoodchain(users, roomid) {
@@ -175,11 +180,11 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, blocks: [], foodchain: [], chat: [], option: {access: access, numberOfUsers: 4}})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access: access, numberOfUsers: 4}, map: 0})
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, blocks: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4}}
+    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4}, map: 0}
 }
 
 function garbageCollect() {
@@ -216,4 +221,8 @@ function getUser(id) {
 
 function isGameOver(roomid) {
     return game.users.filter(element => element.roomid == roomid && element.isDead == false).length == 1 && game.rooms[roomid].status == 1
+}
+
+function getRandomNumber(number1, number2) {
+    return Math.floor((Math.random() * Math.abs(number1 - number2)) + number1 > number2 ? number2 : number1)
 }
