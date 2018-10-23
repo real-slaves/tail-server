@@ -9,7 +9,7 @@ server.listen(process.env.PORT || 8080)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-const game = { // lol
+const game = {
     users: [],
     rooms: []
 }
@@ -35,31 +35,8 @@ setInterval(() => {
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-function chatPosted(roomid, data) {
-    game.rooms[roomid].chat.unshift(data)
-    if(game.rooms[roomid].chat.length > 10)
-	game.rooms[roomid].chat.pop()
-}
-
 function sendRoomList(id) {
     io.to(id).emit({rooms: game.rooms})
-}
-
-function checkGameOver() {
-    game.rooms.forEach((element, index) => {	
-	if (isGameOver(index)) userWon(game.users.find(element => element.roomid == index && element.isDead == false))	
-    })
-}
-
-function sendGameData() {
-    game.users.forEach(element => io.to(element.id).emit("update", {
-	users: getRoomSUserList(getUser(element.id).roomid),
-	room: game.rooms[element.roomid]
-    }))
-}
-
-function monitoring() {
-    console.log(game)
 }
 
 function join(access, id, roomid) {
@@ -115,6 +92,37 @@ function userDisconnected(id) {
     removeUser(id)
 }
 
+function chatPosted(roomid, data) {
+    game.rooms[roomid].chat.unshift(data)
+    if(game.rooms[roomid].chat.length > 10)
+	game.rooms[roomid].chat.pop()
+}
+
+function monitoring() {
+    console.log(game)
+}
+
+function sendGameData() {
+    game.users.forEach(element => io.to(element.id).emit("update", 
+	users: getRoomSUserList(getUser(element.id).roomid),
+	room: game.rooms[element.roomid]
+    }))
+}
+
+function checkGameOver() {
+    game.rooms.forEach((element, index) => {	
+	if (isGameOver(index)) userWon(game.users.find(element => element.roomid == index && element.isDead == false))	
+    })
+}
+
+function garbageCollect() {
+    if (game.rooms.length < 2)
+	return;
+
+    if (game.rooms[game.rooms.length - 1].status == 0 && game.rooms.filter((element, index) => getRoomSNumberOfUser(index) == 0).length > 1)
+	game.rooms.splice(game.rooms.length - 1, 1)
+}
+
 function userWon(winner) {
     clearRoom(winner.roomid)
     getRoomSUserList(winner.roomid).forEach(element => {
@@ -126,8 +134,10 @@ function userWon(winner) {
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
 }
 
-function getDistanceBetween(x1, y1, x2, y2) {
-    return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
+function startGame(roomid) {
+    game.rooms[roomid].status = 1
+    game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
+    setObjects(roomid)
 }
 
 function setObjects(roomid) {
@@ -139,6 +149,7 @@ function setObjects(roomid) {
 
 function putObject(x, y, roomid) {
     game.rooms[roomid].objects.push({x: x, y: y, type: getRandomNumber(0, 2)})
+
     Array(...game.getRoomSUserList(roomid), ...game.rooms[roomid].objects).forEach(element => {
 	if (getDistanceBetween(element.x, element.y, x, y) < 50) {
 		game.rooms[roomid].objects.pop()
@@ -150,13 +161,6 @@ function putObject(x, y, roomid) {
 
 function putSpecialObjects(roomid) {
 
-}
-
-function startGame(roomid) {
-    game.rooms[roomid].status = 1
-    game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
-
-    setObjects(roomid)
 }
 
 function makeFoodchain(users, roomid) {
@@ -171,7 +175,7 @@ function makeFoodchain(users, roomid) {
 function removeUser(id) {
     if (getRoomSNumberOfUser(-1) != 0 && getUser(id).roomid != -1 && game.rooms[0].status == 0)
 	game.users[game.users.findIndex(element => element.roomid == -1)].roomid = 0
-	
+
     game.users.splice(getUserIndex(id), 1)
 }
 
@@ -185,14 +189,6 @@ function createNewRoom(access) {
 
 function clearRoom(roomid) {
     game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4}, map: 0}
-}
-
-function garbageCollect() {
-    if (game.rooms.length < 2)
-	return;
-
-    if (game.rooms[game.rooms.length - 1].status == 0 && game.rooms.filter((element, index) => getRoomSNumberOfUser(index) == 0).length > 1)
-	game.rooms.splice(game.rooms.length - 1, 1)
 }
 
 function getRoom(roomid) {
@@ -225,4 +221,8 @@ function isGameOver(roomid) {
 
 function getRandomNumber(number1, number2) {
     return Math.floor((Math.random() * Math.abs(number1 - number2)) + number1 > number2 ? number2 : number1)
+}
+
+function getDistanceBetween(x1, y1, x2, y2) {
+    return Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 }
