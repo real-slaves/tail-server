@@ -25,6 +25,7 @@ io.on('connection', socket => {
     socket.on("disconnect", data => userDisconnected(socket.id))
     socket.on("chatPost", data => chatPosted(getUser(roomid), data))
     socket.on("addTail", data => io.to(data.target).emit("addTail"))
+    socket.on("getAllData", data => socket.emit("allData", game))
 })
 
 setInterval(() => {
@@ -32,7 +33,7 @@ setInterval(() => {
     sendGameData()
     checkGameOver()
     garbageCollect()
-}, 100)
+}, 50)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
@@ -74,6 +75,13 @@ function updateUser(id, data) {
 
 function userDied(target) {
     emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
+    if (game.rooms[getUser(target).roomid] == undefined)
+	return
+    if (game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target) == undefined)
+	return
+    if (game.rooms[getUser(target).roomid].foodchain[game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.hunter == target)].hunter == undefined)
+        return
+
     let hunter = game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target).hunter
 
     game.rooms[getUser(target).roomid].foodchain.splice(game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.target == target), 1)
@@ -133,6 +141,9 @@ function userWon(winner) {
 }
 
 function startGame(roomid) {
+    if (game.rooms[roomid] == undefined)
+	return
+
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
     setObjects(roomid)
