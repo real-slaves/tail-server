@@ -37,7 +37,7 @@ setInterval(() => {
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
 function sendRoomList(id) {
-    io.to(id).emit({rooms: game.rooms})
+    io.to(id).emit("roomList", {rooms: game.rooms})
 }
 
 function join(access, id, roomid) {
@@ -50,6 +50,7 @@ function join(access, id, roomid) {
 
 	if (getRoomSNumberOfUser(roomIndex) == 4) {
             startGame(roomIndex)
+	    console.log(roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
 	}
@@ -71,8 +72,7 @@ function updateUser(id, data) {
 }
 
 function userDied(hunter, target) {
-    io.to(target).emit("died")
-
+    emitMessagesToUsers(getRoomSUserList(target.roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
     if(!game.rooms[getUser(hunter).roomid])
 	return;
 
@@ -130,8 +130,8 @@ function userWon(winner) {
 	game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
 	if (game.users.findIndex(element => element.isDead != false != -1))
 	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
-	io.to(element.id).emit("gameEnd", {winner: winner} )
     })
+    emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner})
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
 }
 
@@ -139,6 +139,7 @@ function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
     setObjects(roomid)
+    emitMessagesToUsers(getRoomSUserList(roomid), "gameStart", {})
 }
 
 function setObjects(roomid) {
@@ -170,6 +171,10 @@ function removeUser(id) {
 	game.users[game.users.findIndex(element => element.roomid == -1)].roomid = 0
 
     game.users.splice(getUserIndex(id), 1)
+}
+
+function emitMessagesToUsers(userList, messageName, messageData) {
+    userList.forEach(element => io.to(element.id).emit(messageName, messageData))
 }
 
 function addMessage(roomid, userid, message) {
