@@ -48,7 +48,7 @@ function join(access, id, roomid) {
 	else
 	     game.users[getUserIndex(id)].roomid = roomIndex
 
-	if (getRoomSNumberOfUser(roomIndex) == game.rooms[roomIndex].option.numberOfUsers) {
+	if (getRoomSNumberOfUser(roomIndex) == 4) {
             startGame(roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
@@ -138,7 +138,7 @@ function userWon(winner) {
 function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
-//    setObjects(roomid)
+    setObjects(roomid)
 }
 
 function setObjects(roomid) {
@@ -149,18 +149,10 @@ function setObjects(roomid) {
 }
 
 function putObject(x, y, roomid) {
-    game.rooms[roomid].objects.push({x: x, y: y, type: getRandomNumber(0, 2)})
-
-    Array(...getRoomSUserList(roomid), ...game.rooms[roomid].objects).forEach(element => {
-	if (getDistanceBetween(element.x, element.y, x, y) < 50) {
-		game.rooms[roomid].objects.pop()
-		putObject(getRandomNumber(0, 2400), getRandomNumber(0, 2400), roomid)
-		return
-	}
-    })
+    game.rooms[roomid].objects.push({x: x, y: y, type: getRandomNumber(0, 2), rotation: getRandomNumber(Math.PI * -1, Math.PI), size: getRandomNumber(1, 10)})
 }
 
-function putSpecialObjects(roomid) {
+function putSpecialObjects (roomid) {
 
 }
 
