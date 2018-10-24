@@ -140,8 +140,8 @@ function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
     setObjects(roomid)
-    emitMessagesToUsers(getRoomSUserList(roomid), "gameStart", {})
-}
+    setTimeout(function() { emitMessagesToUsers(getRoomSUserList(roomid), "gameStart", game.rooms[roomid])}, 500)
+} 
 
 function setObjects(roomid) {
     for (let i = 0; i < 20; i++)
@@ -151,7 +151,7 @@ function setObjects(roomid) {
 }
 
 function putObject(x, y, roomid) {
-    game.rooms[roomid].objects.push({x: x, y: y, type: getRandomNumber(0, 2), rotation: getRandomNumber(Math.PI * -1, Math.PI), size: getRandomNumber(1, 10)})
+    game.rooms[roomid].objects.push({x: x, y: y, type: 0, rotation: getRandomNumber(Math.PI * -100000, Math.PI * 100000) / 100000, size: getRandomNumber(1, 10)})
 }
 
 function putSpecialObjects (roomid) {
@@ -219,7 +219,7 @@ function isGameOver(roomid) {
 }
 
 function getRandomNumber(number1, number2) {
-    return Math.floor((Math.random() * Math.abs(number1 - number2)) + number1 > number2 ? number2 : number1)
+    return Math.floor((Math.random() * Math.abs(number1 - number2)) + (number1 > number2 ? number2 : number1))
 }
 
 function getDistanceBetween(x1, y1, x2, y2) {
