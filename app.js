@@ -21,7 +21,7 @@ io.on('connection', socket => {
     socket.on("getRoomList", data => sendRoomList(socket.id))
     socket.on("join", data => join(data.access, socket.id, data.roomid))
     socket.on("update", data => updateUser(socket.id, data))
-    socket.on("died", data => userDied(data.hunter, data.target))
+    socket.on("died", data => userDied(data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
     socket.on("chatPost", data => chatPosted(getUser(roomid), data))
     socket.on("addTail", data => io.to(data.target).emit("addTail"))
@@ -72,16 +72,12 @@ function updateUser(id, data) {
     game.users[userIndex].id = id
 }
 
-function userDied(hunter, target) {
+function userDied(target) {
     emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
-    if(!game.rooms[getUser(hunter).roomid])
-	return;
+    let hunter = game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target).hunter
 
-    if (!game.rooms[getUser(hunter).roomid].foodchain.find(element => element.hunter == target) || !game.rooms[getUser(hunter).roomid].foodchain.find(element => element.target == target))
-	return;
-
-    game.rooms[getUser(hunter).roomid].foodchain.splice(game.rooms[getUser(hunter).roomid].foodchain.findIndex(element => element.target == target), 1)
-    game.rooms[getUser(hunter).roomid].foodchain[game.rooms[getUser(hunter).roomid].foodchain.findIndex(element => element.hunter == target)].hunter = hunter   
+    game.rooms[getUser(target).roomid].foodchain.splice(game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.target == target), 1)
+    game.rooms[getUser(target).roomid].foodchain[game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.hunter == target)].hunter = hunter   
     game.users[getUserIndex(target)].isDead = true
 }
 
@@ -89,8 +85,8 @@ function userDisconnected(id) {
     let user = getUser(id)
     if (user == undefined) return;
 
-    if (user.roomid >= 0 && game.rooms[user.roomid].status == 1 && user.isDead == undefined)
-	userDied(null, id)
+    if (user.roomid >= 0 && game.rooms[user.roomid].status == 1)
+	userDied(id)
     removeUser(id)
 }
 
@@ -151,7 +147,7 @@ function setObjects(roomid) {
 }
 
 function putObject(x, y, roomid) {
-    game.rooms[roomid].objects.push({x: x, y: y, type: 0, rotation: getRandomNumber(Math.PI * -100000, Math.PI * 100000) / 100000, size: getRandomNumber(1, 10)})
+    game.rooms[roomid].objects.push({x: x, y: y, type: 0, rotation: getRandomNumber(Math.PI * -100000, Math.PI * 100000) / 100000, size: getRandomNumber(3, 13) / 10})
 }
 
 function putSpecialObjects (roomid) {
