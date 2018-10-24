@@ -43,14 +43,15 @@ function sendRoomList(id) {
 function join(access, id, roomid) {
     if (access == 1) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.option.access == 1)
-	if (game.users.find(element => element.roomid == id) == undefined)
+	if (game.users.find(element => element.id == id) == undefined) {
 	     game.users.push({x: 0, y: 0, id: id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
-	else
+	} else {
 	     game.users[getUserIndex(id)].roomid = roomIndex
+	     game.users[getUserIndex(id)].isDead = false
+	}
 
-	if (getRoomSNumberOfUser(roomIndex) == 4) {
+	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	   
             startGame(roomIndex)
-	    console.log(roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
 	}
@@ -72,7 +73,7 @@ function updateUser(id, data) {
 }
 
 function userDied(hunter, target) {
-    emitMessagesToUsers(getRoomSUserList(target.roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
+    emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
     if(!game.rooms[getUser(hunter).roomid])
 	return;
 
