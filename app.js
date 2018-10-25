@@ -152,17 +152,27 @@ function startGame(roomid) {
 
 function setObjects(roomid) {
     for (let i = 0; i < 20; i++)
-	putObject(getRandomNumber(0, 2400), getRandomNumber(0, 2400), roomid)
+	putObject(roomid)
 
     putSpecialObjects(roomid)
 }
 
-function putObject(x, y, roomid) {
-    game.rooms[roomid].objects.push({x: x, y: y, type: 0, rotation: getRandomNumber(Math.PI * -100000, Math.PI * 100000) / 100000, size: getRandomNumber(3, 13) / 10})
+function putObject(roomid) {
+    let size = getRandomNumber(1, 13) / 10, x, y
+    let rotation = getRandomNumber(-3141592, 3141592) / 100000
+    do {
+	x = getRandomNumber(0, 2400)
+	y = getRandomNumber(0, 2400)
+    } while(isEnablePosition(x, y, size, roomid))
+    game.rooms[roomid].objects.push({x, y, type: 0, size, rotation})
 }
 
 function putSpecialObjects (roomid) {
 
+}
+
+function isEnablePosition (x, y, size, roomid) {
+     return game.rooms[roomid].objects.concat(getRoomSUserList(roomid)).some(element => getDistanceBetween(x, y, element.x, element.y) < size * 100 + (element.size != undefined ? element.size : 0) * 100)
 }
 
 function makeFoodchain(users, roomid) {
@@ -190,7 +200,7 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access: access, numberOfUsers: 4}, map: 0})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access, numberOfUsers: 4}, map: 0})
 }
 
 function clearRoom(roomid) {
