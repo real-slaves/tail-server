@@ -26,6 +26,7 @@ io.on('connection', socket => {
     socket.on("chatPost", data => chatPosted(getUser(roomid), data))
     socket.on("addTail", data => io.to(data.target).emit("addTail"))
     socket.on("getAllData", data => socket.emit("allData", game))
+    socket.on("blockCollision", data => blockCollision(data))
 })
 
 setInterval(() => {
@@ -39,6 +40,10 @@ setInterval(() => {
 
 function sendRoomList(id) {
     io.to(id).emit("roomList", {rooms: game.rooms})
+}
+
+function blockCollision(block) {
+    if (game.rooms[block.roomid].objects[block.index].size > 0) game.rooms[block.roomid].objects[block.index].size -= 0.1
 }
 
 function join(access, id, roomid) {
@@ -151,7 +156,7 @@ function startGame(roomid) {
 } 
 
 function setObjects(roomid) {
-    for (let i = 0; i < 20; i++)
+    for (let i = 0; i < 30; i++)
 	putObject(roomid)
 
     putSpecialObjects(roomid)
@@ -160,11 +165,12 @@ function setObjects(roomid) {
 function putObject(roomid) {
     let size = getRandomNumber(1, 13) / 10, x, y
     let rotation = getRandomNumber(-3141592, 3141592) / 100000
+    let type = Math.floor(getRandomNumber(0,5) / 4)
     do {
 	x = getRandomNumber(0, 2400)
 	y = getRandomNumber(0, 2400)
     } while(isEnablePosition(x, y, size, roomid))
-    game.rooms[roomid].objects.push({x, y, type: 0, size, rotation})
+    game.rooms[roomid].objects.push({x, y, type, size, rotation})
 }
 
 function putSpecialObjects (roomid) {
