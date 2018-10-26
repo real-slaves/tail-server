@@ -23,7 +23,7 @@ io.on('connection', socket => {
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
-    socket.on("chatPost", data => chatPosted(getUser(roomid), data))
+    socket.on("chatPost", data => chatPosted(getUser(socket.id).roomid, data))
     socket.on("addTail", data => io.to(data.target).emit("addTail"))
     socket.on("getAllData", data => socket.emit("allData", game))
     socket.on("blockCollision", data => blockCollision(data))
@@ -44,6 +44,7 @@ function sendRoomList(id) {
 
 function blockCollision(block) {
     if (game.rooms[block.roomid].objects[block.index].size > 0) game.rooms[block.roomid].objects[block.index].size -= 0.1
+    else game.rooms[block.roomid].objects.splice(block.index, 1)
 }
 
 function join(access, id, roomid) {
@@ -105,7 +106,7 @@ function userDisconnected(id) {
 
 function chatPosted(roomid, data) {
     game.rooms[roomid].chat.unshift(data)
-    if(game.rooms[roomid].chat.length > 10)
+    if(game.rooms[roomid].chat.length > 15)
 	game.rooms[roomid].chat.pop()
 }
 
@@ -152,7 +153,8 @@ function startGame(roomid) {
     game.rooms[roomid].status = 1
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
     setObjects(roomid)
-    setTimeout(function() { emitMessagesToUsers(getRoomSUserList(roomid), "gameStart", game.rooms[roomid])}, 500)
+    emitMessagesToUsers(getRoomSUserList(roomid), "countdown", null)
+    setTimeout(function() { emitMessagesToUsers(getRoomSUserList(roomid), "gameStart", game.rooms[roomid])}, 3500)
 } 
 
 function setObjects(roomid) {
@@ -206,11 +208,11 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access, numberOfUsers: 4}, map: 0})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access, numberOfUsers: 4}, map: getRandomNumber(1, 5)})
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4}, map: 0}
+    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4}, map: getRandomNumber(1, 5)}
 }
 
 function getRoom(roomid) {
