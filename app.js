@@ -62,13 +62,13 @@ function join(access, id, roomid) {
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
 	}
-	chatPosted(roomid, {messageUserName: "[System]", messageDescription: "guest joined"})
+	chatPosted(roomIndex, {username: "[System]",description: "guest joined"})
     } else {
 	if (game.rooms[roomid].status == 0) {
 	    game.users.push({x: 0, y:0, id: id, rotation: 0, tail: [], roomid: roomid, isDead: false, username: ""})
 	    if (getRoomSNumberOfUser(roomid) == game.rooms[roomid].option.numberOfUsers)
 		startGame(game.rooms[roomIndex].option.numberOfObjects, roomid)
-	    chatPosted(roomid, {messageUserName: "[System]", messageDescription: "guest joined"})
+	    chatPosted(roomid, {username: "[System]", description: "guest joined"})
 	} else {
 	    io.to(id).emit("full")
 	}
@@ -83,6 +83,7 @@ function updateUser(id, data) {
 
 function userDied(target) {
     emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
+    chatPosted(getUser(target).roomid, {username: "[System]", description: "guest was slained"})
     if (game.rooms[getUser(target).roomid] == undefined)
 	return
     if (game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target) == undefined)
@@ -105,14 +106,14 @@ function userDisconnected(id) {
 	userDied(id)
     removeUser(id)
     
-    chatPosted(getUser(id).roomid, {messageUserName: "[System]", messageDescription: "quest quited"})
+    chatPosted(user.roomid, {username: "[System]", description: "quest quited"})
 }
 
 function chatPosted(roomid, data) {
     if (game.rooms[roomid] == undefined) return
-    game.rooms[roomid].chat.unshift(data)
-    if(game.rooms[roomid].chat.length > 15)
-	game.rooms[roomid].chat.pop()
+    game.rooms[roomid].chat.push(data)
+    if(game.rooms[roomid].chat.length > 6)
+	game.rooms[roomid].chat.shift()
 }
 
 function monitoring() {
