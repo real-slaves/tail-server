@@ -59,7 +59,9 @@ function join(access, id, roomid) {
 	     game.users[getUserIndex(id)].isDead = false
 	}
 
-	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	   
+	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	
+	    if(game.rooms[roomIndex] == undefined)
+		return   
             startGame(game.rooms[roomIndex].option.numberOfObjects, roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
@@ -96,6 +98,8 @@ function userDied(target) {
     let hunter = game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target).hunter
 
     game.rooms[getUser(target).roomid].foodchain.splice(game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.target == target), 1)
+    if (game.rooms[getUser(target).roomid].foodchain[game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.hunter == target)] == undefined)
+	return
     game.rooms[getUser(target).roomid].foodchain[game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.hunter == target)].hunter = hunter   
     game.users[getUserIndex(target)].isDead = true
 }
@@ -160,7 +164,7 @@ function startGame(numberOfObjects, roomid) {
 
     game.rooms[roomid].status = 2
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
-    setObjects(numberOfObjects, roomid)
+    setObjects(numberOfObjects, roomid, game.rooms[roomid].map)
     emitMessagesToUsers(getRoomSUserList(roomid), "countdown", null)
     
     setTimeout(() => {
@@ -169,22 +173,88 @@ function startGame(numberOfObjects, roomid) {
     }, 3500)
 } 
 
-function setObjects(numberOfObjects, roomid) {
+function setObjects(numberOfObjects, roomid, map) {
     for (let i = 0; i < numberOfObjects; i++)
-	putObject(roomid)
+	putObject(roomid, map)
 
     putSpecialObjects(roomid)
 }
 
-function putObject(roomid) {
-    let size = getRandomNumber(1, 13) / 10, x, y
+function putObject(roomid, map) {
+    if (map == 1) {
+        let type = getRandomNumber(0, 2)
+        if (type == 0)
+            createObject(roomid, "block")
+        else if (type == 1)
+            createObject(roomid, "breakableBlock")
+    } else if (map == 2) {
+        let type = getRandomNumber(0, 7)
+        if (type == 0)
+            createObject(roomid, "block")
+        else if (type == 1)
+            createObject(roomid, "breakableBlock")
+        else if (type == 2 || type == 3 || type == 4)
+            createObject(roomid, "wood")
+        else if (type == 5 || type == 6)
+            createObject(roomid, "leaf")
+    } else if (map == 3) {
+        let type = getRandomNumber(0, 8)
+        if (type == 0 || type == 1)
+            createObject(roomid, "block")
+        else if (type == 2 || type == 3)
+            createObject(roomid, "water")
+        else if (type == 4 || type == 5)
+            createObject(roomid, "leaf")
+        else if (type == 6 || type == 7)
+            createObject(roomid, "wood")
+    } else if (map == 4) {
+        let type = getRandomNumber(0, 8)
+        if (type == 0)
+            createObject(roomid, "block")
+        else if (type == 1)
+            createObject(roomid, "breakableBlock")
+        else if (type == 2 || type == 3)
+            createObject(roomid, "cherry1")
+        else if (type == 4 || type == 5)
+            createObject(roomid, "cherry2")
+        else if (type == 6 || type == 7)
+            createObject(roomid, "flower")
+    }
+}
+
+function createObject(roomid, obj) {
+    let size = getRandomNumber(5, 13) / 10, x, y
     let rotation = getRandomNumber(-3141592, 3141592) / 100000
-    let type = getRandomNumber(0, 3)
     do {
-	x = getRandomNumber(0, 2400)
-	y = getRandomNumber(0, 2400)
-    } while(isEnablePosition(x, y, size, roomid))
-    game.rooms[roomid].objects.push({x, y, type, size, rotation})
+        x = getRandomNumber(0, 2400)
+        y = getRandomNumber(0, 2400)
+    } while(obj != "leaf" && obj != "water" && isEnablePosition(x, y, size, roomid))
+
+    if (obj == "block") {
+        game.rooms[roomid].objects.push({x, y, type:0, size, rotation})
+    } else if (obj == "breakableBlock") {
+        game.rooms[roomid].objects.push({x, y, type:1, size, rotation})
+    } else if (obj == "leaf") {
+        game.rooms[roomid].objects.push({x, y, type:2, size, rotation})
+    } else if (obj == "wood") {
+        size = getRandomNumber(15, 30) / 10
+        game.rooms[roomid].objects.push({x, y, type:3, size:size * getRandomNumber(5, 10) / 10, rotation})
+        game.rooms[roomid].objects.push({x, y, type:4, size, rotation})
+    } else if (obj == "water") {
+        game.rooms[roomid].objects.push({x, y, type:5, size, rotation})
+    } else if (obj == "cactus") {
+        game.rooms[roomid].objects.push({x, y, type:6, size, rotation})
+    } else if (obj == "cherry1") {
+        size = getRandomNumber(12, 24) / 10
+        game.rooms[roomid].objects.push({x, y, type:3, size:size * getRandomNumber(5, 10) / 10, rotation})
+        game.rooms[roomid].objects.push({x, y, type:7, size, rotation})
+    } else if (obj == "cherry2") {
+        size = getRandomNumber(12, 24) / 10
+        game.rooms[roomid].objects.push({x, y, type:3, size:size * getRandomNumber(5, 10) / 10, rotation})
+        game.rooms[roomid].objects.push({x, y, type:8, size, rotation})
+    } else if (obj == "flower") {
+        game.rooms[roomid].objects.push({x, y, type:9, size, rotation})
+    }
 }
 
 function putSpecialObjects (roomid) {
@@ -220,11 +290,11 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(1, 4)})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(1, 4)}
+    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)}
 }
 
 function getRoom(roomid) {
