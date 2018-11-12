@@ -146,7 +146,8 @@ function garbageCollect() {
 function userWon(winner) {
     clearRoom(winner.roomid)
     getRoomSUserList(winner.roomid).forEach(element => {
-	game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
+	if(game.rooms[winner.roomid].option.access)
+            game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
 	if (game.users.findIndex(element => element.isDead != false != -1))
 	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
     })
