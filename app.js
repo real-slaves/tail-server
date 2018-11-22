@@ -1,11 +1,9 @@
 const express = require('express')
 const app = express()
-const server = require('http').Server(app)
-const io = require('socket.io')(server)
+const server = app.listen(8080)
+const io = require('socket.io').listen(server);
 
 app.use(express.static('./DiCon2018'))
-
-server.listen(process.env.PORT || 8080)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
@@ -52,27 +50,40 @@ function blockCollision(block) {
 function join(access, id, roomid) {
     if (access == 1) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.option.access == 1)
+	if (game.rooms[roomIndex] == undefined)
+	    return
+
 	if (game.users.find(element => element.id == id) == undefined) {
 	     game.users.push({x: 0, y: 0, id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
 	} else {
 	     game.users[getUserIndex(id)].roomid = roomIndex
 	     game.users[getUserIndex(id)].isDead = false
 	}
+	game.rooms[roomIndex].userInfo.push({id, kill: 0})
 
 	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	
-	    if(game.rooms[roomIndex] == undefined)
-		return   
             startGame(game.rooms[roomIndex].option.numberOfObjects, roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
 		createNewRoom()
 	}
 	setTimeout(() => chatPosted(roomIndex, {username: "[System]",description: `${getUser(id).username} joined`}), 500)
     } else {
+	if (game.rooms.length <= roomid)
+	    return
+	if (game.rooms[roomid].option.access != 0)
+	    return
 	if (game.rooms[roomid].status == 0) {
-	    game.users.push({x: 0, y:0, id, rotation: 0, tail: [], roomid, isDead: false, username: ""})
+	    if (game.users.find(element => element.id == id) == undefined) {
+		game.users.push({x: 0, y:0, id, rotation: 0, tail: [], roomid, isDead: false, username: ""})
+	    } else {
+		game.users[getUserIndex(id)].roomid = roomid
+		game.users[getUserIndex(id)].isDead = false
+	    }
+
 	    if (getRoomSNumberOfUser(roomid) == game.rooms[roomid].option.numberOfUsers)
 		startGame(game.rooms[roomIndex].option.numberOfObjects, roomid)
 	    setTimeout(() => chatPosted(roomid, {username: "[System]", description: `${getUser(id).username} joined`}), 500)
+	    game.rooms[roomid].userInfo.push({id, kill: 0})
 	} else {
 	    io.to(id).emit("full")
 	}
@@ -97,6 +108,8 @@ function userDied(target) {
 
     let hunter = game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target).hunter
 
+    game.rooms[getUser(target).roomid].userInfo[game.rooms[getUser(target).roomid].userInfo.findIndex(element => element.id == hunter)].kill++
+    
     game.rooms[getUser(target).roomid].foodchain.splice(game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.target == target), 1)
     if (game.rooms[getUser(target).roomid].foodchain[game.rooms[getUser(target).roomid].foodchain.findIndex(element => element.hunter == target)] == undefined)
 	return
@@ -123,7 +136,7 @@ function chatPosted(roomid, data) {
 }
 
 function monitoring() {
-    console.log(game)
+    console.log(game.rooms)
 }
 
 function sendGameData() {
@@ -149,13 +162,18 @@ function garbageCollect() {
 
 function userWon(winner) {
     clearRoom(winner.roomid)
+    game.rooms[roomid].option.access = 0
     getRoomSUserList(winner.roomid).forEach(element => {
+	if(game.rooms[winner.roomid] == undefined)
+		return
+	if(game.rooms[winner.roomid].option == undefined)
+		return
 	if(game.rooms[winner.roomid].option.access)
             game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
 	if (game.users.findIndex(element => element.isDead != false != -1))
 	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
     })
-    emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner})
+    emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner, userInfo: game.rooms[winner.roomid].userInfo})
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
 }
 
@@ -163,15 +181,10 @@ function startGame(numberOfObjects, roomid) {
     if (game.rooms[roomid] == undefined)
 	return
 
-    game.rooms[roomid].status = 2
     game.rooms[roomid].foodchain = makeFoodchain(game.users, roomid)
     setObjects(numberOfObjects, roomid, game.rooms[roomid].map)
-    emitMessagesToUsers(getRoomSUserList(roomid), "countdown", null)
-    
-    setTimeout(() => {
 	game.rooms[roomid].status = 1
 	emitMessagesToUsers(getRoomSUserList(roomid), "gameStart", game.rooms[roomid])
-    }, 3500)
 } 
 
 function setObjects(numberOfObjects, roomid, map) {
@@ -291,11 +304,11 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)}
+    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)}
 }
 
 function getRoom(roomid) {
