@@ -304,7 +304,7 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
 }
 
 function clearRoom(roomid) {
