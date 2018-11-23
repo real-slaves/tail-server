@@ -59,7 +59,7 @@ function join(access, id, roomid) {
 	     game.users[getUserIndex(id)].roomid = roomIndex
 	     game.users[getUserIndex(id)].isDead = false
 	}
-	game.rooms[roomIndex].userInfo.push({id, kill: 0})
+	game.rooms[roomIndex].userInfo.push({id, kill: 0, username})
 
 	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	
             startGame(game.rooms[roomIndex].option.numberOfObjects, roomIndex)
@@ -83,7 +83,7 @@ function join(access, id, roomid) {
 	    if (getRoomSNumberOfUser(roomid) == game.rooms[roomid].option.numberOfUsers)
 		startGame(game.rooms[roomIndex].option.numberOfObjects, roomid)
 	    setTimeout(() => chatPosted(roomid, {username: "[System]", description: `${getUser(id).username} joined`}), 500)
-	    game.rooms[roomid].userInfo.push({id, kill: 0})
+	    game.rooms[roomid].userInfo.push({id, kill: 0, username})
 	} else {
 	    io.to(id).emit("full")
 	}
