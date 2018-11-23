@@ -97,6 +97,8 @@ function updateUser(id, data) {
 }
 
 function userDied(target) {
+    if (getUser(target) == undefined)
+	return 
     emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
     chatPosted(getUser(target).roomid, {username: "[System]", description: `${getUser(target).username} was slained`})
     if (game.rooms[getUser(target).roomid] == undefined)
@@ -169,6 +171,7 @@ function userWon(winner) {
     game.users[getUserIndex(winner.id)].isDead = true
     clearRoom(winner.roomid)
     createNewRoom(1)
+    getRoomSUserList(winner.roomid).forEach(element => game.users[getUserIndex(element.id)] = -2)
     game.rooms[winner.roomid].option.access = 1
 }
 
