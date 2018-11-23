@@ -173,7 +173,8 @@ function userWon(winner) {
 	if (game.users.findIndex(element => element.isDead != false != -1))
 	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
     })
-    emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner, userInfo: game.rooms[winner.roomid].userInfo})
+    if(game.rooms[winner.roomid] != undefined)
+	emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner, userInfo: game.rooms[winner.roomid].userInfo})
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2) 
 }
 
