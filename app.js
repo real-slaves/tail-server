@@ -64,7 +64,7 @@ function join(access, id, roomid) {
 	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	
             startGame(game.rooms[roomIndex].option.numberOfObjects, roomIndex)
             if (game.rooms.findIndex(element => element.status == 0 && element.option.access == 1) == -1)
-		createNewRoom()
+		createNewRoom(1)
 	}
 	setTimeout(() => chatPosted(roomIndex, {username: "[System]",description: `${getUser(id).username} joined`}), 500)
     } else {
@@ -162,7 +162,7 @@ function garbageCollect() {
 
 function userWon(winner) {
     clearRoom(winner.roomid)
-    game.rooms[roomid].option.access = 0
+    game.rooms[winner.roomid].option.access = 1
     getRoomSUserList(winner.roomid).forEach(element => {
 	if(game.rooms[winner.roomid] == undefined)
 		return
@@ -304,7 +304,7 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)})
 }
 
 function clearRoom(roomid) {
