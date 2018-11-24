@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const server = app.listen(80)
-const io = require('socket.io').listen(server);
+const io = require('socket.io').listen(server)
 
 app.use(express.static('./DiCon2018'))
 
