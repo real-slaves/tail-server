@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="bin/phaser.js"></script>
+    <script src="bin/socketio.js"></script>
+    <script src="src/util.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Nanum+Gothic" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Nanum Gothic', sans-serif;
+            color: lightgray;
+        }
+
+        #chat {
+            width: 30vw;
+            height: 30vh;
+            position: absolute;
+            left: 1vw;
+            bottom: 1vw;
+            background-color: #000000;
+            opacity: 0.6; 
+            border: 1px solid #000000;
+        }
+
+        input {
+            position: absolute;
+            left: 0vw;
+            bottom: 0vw;
+            width: 30vw;
+            height: 3vh;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            opacity: 0.9;
+            border: none;
+        }
+
+        p {
+            display: inline;
+        }
+
+        .message {
+            font-size: 1.5vw;
+            height: 3vh;
+            margin: 0;
+            padding: 0;
+            opacity: 1;
+        }
+
+        .messageUserName {
+            width: 5vw;
+            height: 3vh;
+            opacity: 1;
+        }
+
+        .messageDescription {
+            width: 12vw;
+            height: 3vh;
+            color: white;
+            opacity: 1;
+        }
+
+        .hide {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat" class="hide">
+    <input type="text" id="input" onkeypress="if(event.keyCode==13) {postChat(); return false;}" autofocus/>
+    </div>
+    <script src="src/game.js"></script>
+</body>
+</html>
