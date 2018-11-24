@@ -59,7 +59,7 @@ function join(access, id, roomid) {
 	     game.users[getUserIndex(id)].roomid = roomIndex
 	     game.users[getUserIndex(id)].isDead = false
 	}
-	game.rooms[roomIndex].userInfo.push({id, kill: 0, username})
+	game.rooms[roomIndex].userInfo.push({id, kill: 0})
 
 	if (getRoomSNumberOfUser(roomIndex) == 4 || roomIndex == -1) {	
             startGame(game.rooms[roomIndex].option.numberOfObjects, roomIndex)
@@ -83,7 +83,7 @@ function join(access, id, roomid) {
 	    if (getRoomSNumberOfUser(roomid) == game.rooms[roomid].option.numberOfUsers)
 		startGame(game.rooms[roomIndex].option.numberOfObjects, roomid)
 	    setTimeout(() => chatPosted(roomid, {username: "[System]", description: `${getUser(id).username} joined`}), 500)
-	    game.rooms[roomid].userInfo.push({id, kill: 0, username})
+	    game.rooms[roomid].userInfo.push({id, kill: 0})
 	} else {
 	    io.to(id).emit("full")
 	}
@@ -97,8 +97,6 @@ function updateUser(id, data) {
 }
 
 function userDied(target) {
-    if (getUser(target) == undefined)
-	return 
     emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
     chatPosted(getUser(target).roomid, {username: "[System]", description: `${getUser(target).username} was slained`})
     if (game.rooms[getUser(target).roomid] == undefined)
@@ -132,13 +130,14 @@ function userDisconnected(id) {
 
 function chatPosted(roomid, data) {
     if (game.rooms[roomid] == undefined) return
+    if (roomid < 0) return
     game.rooms[roomid].chat.push(data)
     if(game.rooms[roomid].chat.length > 6)
 	game.rooms[roomid].chat.shift()
 }
 
 function monitoring() {
-    console.log(game)
+   // console.log(game)
 }
 
 function sendGameData() {
@@ -150,7 +149,7 @@ function sendGameData() {
 
 function checkGameOver() {
     game.rooms.forEach((element, index) => {	
-	if (index >= 0 && isGameOver(index)) {  userWon(game.users.find(element => element.roomid == index && element.roomid >= 0 && element.isDead == false)); console.log(game.users.find(element => element.isDead ==false))}
+	if (index >= 0 && isGameOver(index)) userWon(game.users.find(element => element.roomid == index && element.roomid >= 0 && element.isDead == false))	
     })
 }
 
@@ -163,15 +162,26 @@ function garbageCollect() {
 }
 
 function userWon(winner) {
+    getRoomSUserList(winner.roomid).forEach(element => {
+	if (game.rooms[winner.roomid] == undefined)
+	    return
+	if (game.rooms[winner.roomid].option == undefined)
+	    return
+	if (game.rooms[winner.roomid].option.access)
+             game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
+	if (game.users.findIndex(element => element.isDead != false) != -1)
+	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
+    })
+    game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2)
     if (game.rooms[winner.roomid] != undefined)
 	emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner, userInfo: game.rooms[winner.roomid].userInfo})
 
-    if (winner.roomid < 0)
+    if (winner.roomid < 0) {
+	console.log(winner.roomid)
 	return
-    game.users[getUserIndex(winner.id)].isDead = true
+    }
     clearRoom(winner.roomid)
     createNewRoom(1)
-    getRoomSUserList(winner.roomid).forEach(element => game.users[getUserIndex(element.id)] = -2)
     game.rooms[winner.roomid].option.access = 1
 }
 
