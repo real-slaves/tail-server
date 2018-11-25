@@ -305,7 +305,7 @@ function createNewRoom(access) {
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(4, 5)}
+    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(1, 5)}
 }
 
 function getRoom(roomid) {
