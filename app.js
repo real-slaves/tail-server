@@ -137,7 +137,7 @@ function chatPosted(roomid, data) {
 }
 
 function monitoring() {
-   // console.log(game)
+   console.log(game)
 }
 
 function sendGameData() {
@@ -162,27 +162,16 @@ function garbageCollect() {
 }
 
 function userWon(winner) {
-    getRoomSUserList(winner.roomid).forEach(element => {
-	if (game.rooms[winner.roomid] == undefined)
-	    return
-	if (game.rooms[winner.roomid].option == undefined)
-	    return
-	if (game.rooms[winner.roomid].option.access)
-             game.users[game.users.findIndex(element => element.roomid != -2)].roomid = -2
-	if (game.users.findIndex(element => element.isDead != false) != -1)
-	     game.users[game.users.findIndex(element => element.isDead != false)].isDead = false
-    })
-    game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2)
+    if (winner.roomid < 0)
+    	return
+
     if (game.rooms[winner.roomid] != undefined)
 	emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner, userInfo: game.rooms[winner.roomid].userInfo})
 
-    if (winner.roomid < 0) {
-	console.log(winner.roomid)
-	return
-    }
     clearRoom(winner.roomid)
     createNewRoom(1)
     game.rooms[winner.roomid].option.access = 1
+    game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2)
 }
 
 function startGame(numberOfObjects, roomid) {

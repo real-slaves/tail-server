@@ -327,8 +327,6 @@ let inGame =
         mainmenu.visible = false;
 
         regame = game.add.button(screenWidth/2 - 70, screenHeight/2 + 270, 'regame', () => {
-            if (roomid === -2)
-            {
                 blocks.forEach(value => value.destroy());
                 blocks = [];
                 
@@ -336,7 +334,6 @@ let inGame =
                 game.state.start('waiting');
                 document.querySelector("#chat").setAttribute("class", "hide");
                 socket.emit('join', {access: 1});
-            }
         }, this, 2, 1, 0)
 
         regame.fixedToCamera = true;
