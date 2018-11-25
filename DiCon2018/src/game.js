@@ -991,7 +991,7 @@ class Enemy
 }
 
 // Socket IO
-let socket = io('http://tail-server-nlksp.run.goorm.io');
+let socket = io('http://saramin.ga');
 socket.on("update", function(data)
 {
     if (game.state.current == 'waiting')
