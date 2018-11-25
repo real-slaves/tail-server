@@ -311,8 +311,6 @@ let inGame =
         lose.visible = false;
 
         mainmenu = game.add.button(screenWidth/2 - 250, screenHeight/2 + 270, 'mainmenu', () => {
-            if (roomid === -2)
-            {
                 blocks.forEach(value => value.destroy());
                 blocks = [];
                 
@@ -320,7 +318,6 @@ let inGame =
                 game.state.start('main');
                 document.querySelector("#chat").setAttribute("class", "hide");
                 socket.emit('join', {access: 1});
-            }
         }, this, 2, 1, 0)
         mainmenu.fixedToCamera = true;
         mainmenu.anchor.setTo(0.5);
