@@ -21,24 +21,22 @@ io.on('connection', socket => {
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
-    socket.on("chatPost", data => chatPosted(getUser(socket.id).roomid, data))
-    socket.on("addTail", data => io.to(data.target).emit("addTail"))
-    socket.on("getAllData", data => socket.emit("allData", game))
+    socket.on("chatPost", data => { if (getUser(socket.id) != undefined) chatPosted(getUser(socket.id).roomid, data)})
+    socket.on("addTail", data => emitMessageToTheUser(data.target, "addTail", {}))
+    socket.on("getAllData", data => emitMessageToTheUser(socket.id, "allData", game))
     socket.on("blockCollision", data => blockCollision(data))
+    socket.on("createCustomRoom", data => emitMessageToTheUser(socket.id, "roomCreated", { roomid: createNewCustomRoom(data.option) }))
 })
 
 setInterval(() => {
-    monitoring()
     sendGameData()
     checkGameOver()
     garbageCollect()
-}, 50)
+}, 35)
+
+setInterval(() => monitoring(), 500)
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-function sendRoomList(id) {
-    io.to(id).emit("roomList", {rooms: game.rooms})
-}
 
 function blockCollision(block) {
     if (game.rooms[block.roomid] == undefined) return
@@ -52,7 +50,6 @@ function join(access, id, roomid) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.option.access == 1)
 	if (game.rooms[roomIndex] == undefined || roomIndex < 0)
 	    return
-
 	if (game.users.find(element => element.id == id) == undefined) {
 	     game.users.push({x: 0, y: 0, id, rotation: 0, tail: [], roomid: roomIndex, isDead: false, username: ""})
 	} else {
@@ -85,20 +82,18 @@ function join(access, id, roomid) {
 	    setTimeout(() => chatPosted(roomid, {username: "[System]", description: `${getUser(id).username} joined`}), 500)
 	    game.rooms[roomid].userInfo.push({id, kill: 0})
 	} else {
-	    io.to(id).emit("full")
+	    emitMessageToTheUser(id, "full", {})
 	}
     }
 }
 
 function updateUser(id, data) {
-   let userIndex = getUserIndex(id)
+    let userIndex = getUserIndex(id)
     game.users[userIndex] = data
     game.users[userIndex].id = id
 }
 
 function userDied(target) {
-    emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
-    chatPosted(getUser(target).roomid, {username: "[System]", description: `${getUser(target).username} was slained`})
     if (game.rooms[getUser(target).roomid] == undefined)
 	return
     if (game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target) == undefined)
@@ -107,6 +102,14 @@ function userDied(target) {
         return
 
     let hunter = game.rooms[getUser(target).roomid].foodchain.find(element => element.target == target).hunter
+
+    if (getUser(hunter) == undefined)
+	return
+    if (getUser(hunter).isDead == true)
+	return
+
+    emitMessagesToUsers(getRoomSUserList(getUser(target).roomid), "died", {id: target, x: getUser(target).x, y: getUser(target).y})
+    chatPosted(getUser(target).roomid, {username: "[System]", description: getUser(target).username + " was slained"})
 
     game.rooms[getUser(target).roomid].userInfo[game.rooms[getUser(target).roomid].userInfo.findIndex(element => element.id == hunter)].kill++
     
@@ -137,11 +140,11 @@ function chatPosted(roomid, data) {
 }
 
 function monitoring() {
-   //console.log(game)
+    console.log(game)
 }
 
 function sendGameData() {
-    game.users.forEach(element => io.to(element.id).emit("update", { 
+    game.users.forEach(element => emitMessageToTheUser(element.id, "update", { 
 	users: getRoomSUserList(getUser(element.id).roomid),
 	room: game.rooms[element.roomid]
     }))
@@ -293,7 +296,11 @@ function removeUser(id) {
 }
 
 function emitMessagesToUsers(userList, messageName, messageData) {
-    userList.forEach(element => io.to(element.id).emit(messageName, messageData))
+    userList.forEach(element => emitMessageToTheUser(element.id, messageName, messageData))
+}
+
+function emitMessageToTheUser(userid, messageName, messageData) {
+    io.to(userid).emit(messageName, messageData)
 }
 
 function addMessage(roomid, userid, message) {
@@ -301,11 +308,18 @@ function addMessage(roomid, userid, message) {
 }
 
 function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(1, 5)})
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access, numberOfUsers: 4, numberOfObjects: 30, mapCodeFixed: false, password: null}, map: getRandomNumber(1, 5)})
+    return game.rooms.length - 1
+}
+
+function createNewCustomRoom(option) {
+    let roomIndex = createNewRoom(0)
+    game.rooms[roomIndex].option = option
+    return roomIndex
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30}, map: getRandomNumber(1, 5)}
+    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30, mapCodeFixed: false, password: null}, map: getRandomNumber(1, 5)}
 }
 
 function getRoom(roomid) {

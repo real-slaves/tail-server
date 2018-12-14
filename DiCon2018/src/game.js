@@ -311,6 +311,8 @@ let inGame =
         lose.visible = false;
 
         mainmenu = game.add.button(screenWidth/2 - 250, screenHeight/2 + 270, 'mainmenu', () => {
+            if (roomid === -2)
+            {
                 blocks.forEach(value => value.destroy());
                 blocks = [];
                 
@@ -318,12 +320,15 @@ let inGame =
                 game.state.start('main');
                 document.querySelector("#chat").setAttribute("class", "hide");
                 socket.emit('join', {access: 1});
+            }
         }, this, 2, 1, 0)
         mainmenu.fixedToCamera = true;
         mainmenu.anchor.setTo(0.5);
         mainmenu.visible = false;
 
         regame = game.add.button(screenWidth/2 - 70, screenHeight/2 + 270, 'regame', () => {
+            if (roomid === -2)
+            {
                 blocks.forEach(value => value.destroy());
                 blocks = [];
                 
@@ -331,6 +336,7 @@ let inGame =
                 game.state.start('waiting');
                 document.querySelector("#chat").setAttribute("class", "hide");
                 socket.emit('join', {access: 1});
+            }
         }, this, 2, 1, 0)
 
         regame.fixedToCamera = true;
@@ -985,7 +991,7 @@ class Enemy
 }
 
 // Socket IO
-let socket = io('http://saramin.ga');
+let socket = io('http://tail-server-qhjjb.run.goorm.io');
 socket.on("update", function(data)
 {
     if (game.state.current == 'waiting')
@@ -1129,7 +1135,7 @@ function updateChat(chat) {
     }
 
     chat.forEach((message, index) => {
-        messageUserElement[index].innerHTML = message.username;
-        messageDescriptionElement[index].innerHTML = message.description;
+        messageUserElement[index].innerText =  message.username;
+        messageDescriptionElement[index].innerText = message.description;
     });
 }
