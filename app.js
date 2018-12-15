@@ -12,12 +12,12 @@ const game = {
     rooms: []
 }
 
-createNewRoom(1)
+createNewRoom()
 
 io.set('origins', '*:*')
 io.on('connection', socket => {
     socket.on("getRoomList", data => sendRoomList(socket.id))
-    socket.on("join", data => join(data.access, socket.id, data.roomid))
+    socket.on("join", data => join(data.access, socket.id, data.roomid, data.password))
     socket.on("update", data => updateUser(socket.id, data))
     socket.on("died", data => userDied(data.target))
     socket.on("disconnect", data => userDisconnected(socket.id))
@@ -25,7 +25,7 @@ io.on('connection', socket => {
     socket.on("addTail", data => emitMessageToTheUser(data.target, "addTail", {}))
     socket.on("getAllData", data => emitMessageToTheUser(socket.id, "allData", game))
     socket.on("blockCollision", data => blockCollision(data))
-    socket.on("createCustomRoom", data => emitMessageToTheUser(socket.id, "roomCreated", { roomid: createNewCustomRoom(data.option) }))
+    socket.on("createCustomRoom", data => emitMessageToTheUser(socket.id, "roomCreated", { roomid: createNewCustomRoom(data) }))
 })
 
 setInterval(() => {
@@ -45,7 +45,7 @@ function blockCollision(block) {
     else game.rooms[block.roomid].objects.splice(block.index, 1)
 }
 
-function join(access, id, roomid) {
+function join(access, id, roomid, password) {
     if (access == 1) {
 	let roomIndex = game.rooms.findIndex(element => element.status == 0 && element.option.access == 1)
 	if (game.rooms[roomIndex] == undefined || roomIndex < 0)
@@ -65,12 +65,18 @@ function join(access, id, roomid) {
 	}
 	setTimeout(() => chatPosted(roomIndex, {username: "[System]",description: `${getUser(id).username} joined`}), 500)
     } else {
+        console.log(roomid, game.rooms[roomid])
 	if (game.rooms.length <= roomid)
+	    return
+        if (game.rooms[roomid] == undefined)
+	    return
+	if (game.rooms[roomid].option == undefined)
 	    return
 	if (game.rooms[roomid].option.access != 0)
 	    return
 	if (game.rooms[roomid].status == 0) {
-	    if (game.users.find(element => element.id == id) == undefined) {
+            console.log(game.users.find(element => element.id == id), id)
+	    if (game.users.find(element => element.id == id) == undefined || game.users[-1].id == id) {
 		game.users.push({x: 0, y:0, id, rotation: 0, tail: [], roomid, isDead: false, username: ""})
 	    } else {
 		game.users[getUserIndex(id)].roomid = roomid
@@ -160,7 +166,7 @@ function garbageCollect() {
     if (game.rooms.length < 2)
 	return;
 
-    if (game.rooms[game.rooms.length - 1].status == 0 && game.rooms.filter((element, index) => getRoomSNumberOfUser(index) == 0).length > 1)
+    if (game.rooms[game.rooms.length - 1].status == 0 && game.rooms.filter((element, index) => getRoomSNumberOfUser(index) == 0 && game.rooms[index].option.access == 1).length > 1)
 	game.rooms.splice(game.rooms.length - 1, 1)
 }
 
@@ -170,9 +176,9 @@ function userWon(winner) {
 
     if (game.rooms[winner.roomid] != undefined)
 	emitMessagesToUsers(getRoomSUserList(winner.roomid), "gameEnd", {winner: winner, userInfo: game.rooms[winner.roomid].userInfo})
-
+    
     clearRoom(winner.roomid)
-    createNewRoom(1)
+    createNewRoom()
     game.rooms[winner.roomid].option.access = 1
     game.users.filter(element => element.roomid == winner.roomid).forEach(element => game.users[getUserIndex(element.id)].roomid = -2)
 }
@@ -307,19 +313,30 @@ function addMessage(roomid, userid, message) {
     game.rooms[roomid].push({userid: userid, message: message})
 }
 
-function createNewRoom(access) {
-    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access, numberOfUsers: 4, numberOfObjects: 30, mapCodeFixed: false, password: null}, map: getRandomNumber(1, 5)})
+function createNewRoom() {
+    game.rooms.push({status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30, mapCodeFixed: false, password: null, mapSize: 2400}, map: getRandomNumber(1, 5)})
     return game.rooms.length - 1
 }
 
 function createNewCustomRoom(option) {
-    let roomIndex = createNewRoom(0)
+    let roomIndex = createNewRoom()
     game.rooms[roomIndex].option = option
+    game.rooms[roomIndex].option.access = 0
+    if (option.mapCodeFixed)
+	game.rooms[roomIndex].map = option.map
     return roomIndex
 }
 
 function clearRoom(roomid) {
-    game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30, mapCodeFixed: false, password: null}, map: getRandomNumber(1, 5)}
+    if (game.rooms[roomid].option.mapCodeFixed == false)
+	game.rooms[roomid].map = getRandomNumber(1, 5)
+    else
+        game.rooms[roomid] = {status: 0, objects: [], foodchain: [], chat: [], userInfo: [], option: {access: 1, numberOfUsers: 4, numberOfObjects: 30, mapCodeFixed: false, password: null, mapSize: 2400}, map: getRandomNumber(1, 5)}
+    
+    game.rooms[roomid].status = 0
+    game.rooms[roomid].foodchain = []
+    game.rooms[roomid].object = []
+    game.rooms[roomid].userInfo.map(element => { return { id, kill: 0 }})
 }
 
 function getRoom(roomid) {
