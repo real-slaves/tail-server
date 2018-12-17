@@ -1,7 +1,8 @@
 const express = require('express')
 const app = express()
 const server = app.listen(80)
-const io = require('socket.io').listen(server)
+const WebSocketServer = require("websocketserver")
+const wsServer = new WebSocketServer("all", 9000)
 
 app.use(express.static('./DiCon2018'))
 
@@ -14,19 +15,23 @@ const game = {
 
 createNewRoom()
 
-io.set('origins', '*:*')
-io.on('connection', socket => {
-    socket.on("getRoomList", data => sendRoomList(socket.id))
-    socket.on("join", data => join(data.access, socket.id, data.roomid, data.password))
-    socket.on("update", data => updateUser(socket.id, data))
-    socket.on("died", data => userDied(data.target))
-    socket.on("disconnect", data => userDisconnected(socket.id))
-    socket.on("chatPost", data => { if (getUser(socket.id) != undefined) chatPosted(getUser(socket.id).roomid, data)})
-    socket.on("addTail", data => emitMessageToTheUser(data.target, "addTail", {}))
-    socket.on("getAllData", data => emitMessageToTheUser(socket.id, "allData", game))
-    socket.on("blockCollision", data => blockCollision(data))
-    socket.on("createCustomRoom", data => emitMessageToTheUser(socket.id, "roomCreated", createNewCustomRoom(data)))
+wss.on("message", (data, id) => {
+    let message = JSON.parse(server.convertToString(server.unmaskMessage(data).message))
+    switch(message.name) {
+	case "getRoomList": sendRoomList(id); break;
+	case "join": join(message.access, id, message.roomid, message. roomid); break;
+	case "update": updateUser(id, message); break;
+	case "died": userDied(message.target); break;
+	case "chatPost": chatPosted(getUser(id).roomid, message); break;
+	case "addTail": emitMessageToTheUser(message.target, "addTail", {}); break;
+	case "getAllData": emitMessageToTheUser(id, "allData", game); break;
+	case "blockCollision": blockCollision(message); break;
+	case "createCustomRoom": emitMessageToTheUser(id, "roomCreated", createNewCustomRoom(data)); break;
+	default: console.error(message.name)
+    }
 })
+
+wss.on("closedconnection", id => userDisconnected(id))
 
 setInterval(() => {
     sendGameData()
@@ -309,6 +314,8 @@ function emitMessagesToUsers(userList, messageName, messageData) {
 
 function emitMessageToTheUser(userid, messageName, messageData) {
     io.to(userid).emit(messageName, messageData)
+    messageData.name = messageName
+    server.sendMessage("one", JSON.stringify({target: "client", message: messageData}))
 }
 
 function addMessage(roomid, userid, message) {
