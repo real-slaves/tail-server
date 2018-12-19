@@ -3,9 +3,11 @@ let foodChain = [];
 let enemiesData = [];
 let playerName = {};
 let roomid = -3;
+let lastedRoomid = 0;
+let roomPassword = "-";
 let status = 0;
 let map = 0;
-let username = null;
+let username = "guest";
 
 let roomCreate_number_value = 0;
 let roomCreate_mapSize_value = 0;
@@ -17,6 +19,8 @@ let player = {};
 let leftEnemyText = [];
 let leftEnemyText2;
 let minimapAnchor = [];
+let topbar = {};
+let roomInfo = {};
 
 let win = {};
 let lose = {};
@@ -53,6 +57,11 @@ let main =
         game.load.image('text2', 'src/assets/sprites/UI/main/text2.png');
         game.load.image('text3', 'src/assets/sprites/UI/main/text3.png');
         game.load.image('madeBy', 'src/assets/sprites/UI/main/madeBy.png');
+        game.load.image('yourName', 'src/assets/sprites/UI/main/yourName.png');
+        game.load.image('inputNickname', 'src/assets/sprites/UI/main/inputNickname.png');
+        game.load.image('guide', 'src/assets/sprites/UI/main/guide.png');
+        game.load.image('openGuide', 'src/assets/sprites/UI/main/openGuide.png');
+        game.load.image('closeGuide', 'src/assets/sprites/UI/main/closeGuide.png');
 
         game.load.image('roomCreate_logo', 'src/assets/sprites/UI/main/roomCreate/roomCreate_logo.png');
         game.load.image('roomCreate_mapSize', 'src/assets/sprites/UI/main/roomCreate/roomCreate_mapSize.png');
@@ -66,6 +75,9 @@ let main =
         game.load.image('roomCreate_done', 'src/assets/sprites/UI/main/roomCreate/roomCreate_done.png');
 
         game.load.image('roomJoin_logo', 'src/assets/sprites/UI/main/roomJoin/roomJoin_logo.png');
+        game.load.image('roomJoin_code', 'src/assets/sprites/UI/main/roomJoin/roomJoin_code.png');
+        game.load.image('roomJoin_password', 'src/assets/sprites/UI/main/roomJoin/roomJoin_password.png');
+        game.load.image('roomJoin_done', 'src/assets/sprites/UI/main/roomJoin/roomJoin_done.png');
 
         game.load.image('previous', 'src/assets/sprites/UI/main/Previous.png');
         game.load.image('next', 'src/assets/sprites/UI/main/Next.png');
@@ -88,35 +100,6 @@ let main =
 
     create : function()
     {
-        if (username == null)
-        {
-            let ran = game.rnd.integerInRange(0, 9);
-            if (ran == 0) username = "wonderful";
-            else if (ran == 1) username = "beautiful";
-            else if (ran == 2) username = "kind";
-            else if (ran == 3) username = "handsome";
-            else if (ran == 4) username = "powerful";
-            else if (ran == 5) username = "incredible";
-            else if (ran == 6) username = "graceful";
-            else if (ran == 7) username = "amazing";
-            else if (ran == 8) username = "pretty";
-            else if (ran == 9) username = "cute";
-            else username = "tacky";
-
-            ran = game.rnd.integerInRange(0, 9);
-            if (ran == 0) username += " snoopy";
-            else if (ran == 1) username += " chicken";
-            else if (ran == 2) username += " pizza";
-            else if (ran == 3) username += " ramen";
-            else if (ran == 4) username += " apple";
-            else if (ran == 5) username += " sunrin";
-            else if (ran == 6) username += " kimchi";
-            else if (ran == 7) username += " butter";
-            else if (ran == 8) username += " java";
-            else if (ran == 9) username += " pineapple";
-            else username += "javascript";
-        }
-
         game.stage.backgroundColor = '#f1f1f1';
         game.add.tileSprite(0, 0, 2000, 2000, 'background');
         player = new Player();
@@ -136,11 +119,20 @@ let main =
             this.time = 10;
         }
         this.openRoomCreate = 0;
+        this.openRoomJoin = 0;
         this.button = [];
         this.goToWaiting = 0;
         this.isRandomRoom = true;
 
         this.madeBy = game.add.sprite(screenWidth - 220, screenHeight - 100, 'madeBy');
+        this.yourName = game.add.sprite(0, screenHeight - 90, 'yourName');
+        this.nickname = game.add.text(10, screenHeight - 55, "guest", { font: "37px Arial bold", fill: "#000000"});
+        this.nickname.fontWeight = "bold";
+        game.add.button(10, screenHeight - 51, 'inputNickname', () => {
+            this.focus = "nickname";
+        }, this, 2, 1, 0);
+        this.focus = null;
+        this.cursor = 0;
 
         this.logo = game.add.sprite(screenWidth/2, screenHeight/2, 'logo');
         this.logo.anchor.setTo(0.5);
@@ -157,13 +149,19 @@ let main =
         }
         this.button[1] = {
             check:game.add.sprite(screenWidth/2 - 50, screenHeight/2 + 80, 'check'),
-            text:game.add.sprite(screenWidth/2 - 50, screenHeight/2 + 80, 'text2')
+            text:game.add.button(screenWidth/2 - 50, screenHeight/2 + 80, 'text2', () => {
+                if (this.time >= 3.3 && this.openRoomJoin == 0)
+                {
+                    this.openRoomJoin = this.time;
+                }
+            }, this, 2, 1, 0)
         }
         this.button[2] = {
             check:game.add.sprite(screenWidth/2 - 50, screenHeight/2 + 160, 'check'),
             text:game.add.button(screenWidth/2 - 50, screenHeight/2 + 160, 'text3', () => {
                 if (this.time >= 3.3 && this.goToWaiting === 0)
                 {
+                    this.isRandomRoom = true;
                     this.goToWaiting = this.time;
                 }
             }, this, 2, 1, 0)
@@ -268,6 +266,53 @@ let main =
             }
         }, this, 2, 1, 0)
 
+        this.roomJoin_logo = game.add.sprite(screenWidth, screenHeight/2 - 180, 'roomJoin_logo');
+        this.roomJoin_done = game.add.button(screenWidth, screenHeight/2 - 130, 'roomJoin_done', () => {
+            if (this.openRoomJoin && this.time - this.openRoomJoin >= 1 && this.goToWaiting === 0)
+            {
+                socket.emit('join', {
+                    access: 0,
+                    roomid: this.roomJoin_code_value,
+                    password: this.roomJoin_password_value,
+                    username: username
+                });
+                this.goToWaiting = this.time;
+                this.isRandomRoom = false;
+            }
+        }, this, 2, 1, 0)
+
+        this.roomJoin_code_value = "-";
+        this.roomJoin_code = game.add.sprite(screenWidth, screenHeight/2 - 80, 'roomJoin_code');
+        this.roomJoin_code_text = game.add.text(screenWidth, screenHeight/2 - 40, this.roomJoin_code_value, { font: "35px Arial bold", fill: "#000000"});
+        this.roomJoin_code_text.fontWeight = "bold"
+        this.roomJoin_code_input = game.add.button(screenWidth, screenHeight/2 - 40, 'inputNickname', () => {
+            this.focus = "code";
+        }, this, 2, 1, 0);
+
+        this.roomJoin_password_value = "-";
+        this.roomJoin_password = game.add.sprite(screenWidth, screenHeight/2 + 30, 'roomJoin_password');
+        this.roomJoin_password_text = game.add.text(screenWidth, screenHeight/2 + 70, this.roomJoin_password_value, { font: "35px Arial bold", fill: "#000000"});
+        this.roomJoin_password_text.fontWeight = "bold"
+        this.roomJoin_password_input = game.add.button(screenWidth, screenHeight/2 + 70, 'inputNickname', () => {
+            this.focus = "password";
+        }, this, 2, 1, 0);
+
+        this.guide = game.add.sprite(screenWidth / 2, screenHeight / 2, 'guide');
+        this.guide.anchor.setTo(0.5);
+        this.guide.scale.setTo(1.2);
+        this.guide.alpha = 0;
+
+        this.openGuide = game.add.button(screenWidth - 100, 5, 'openGuide', () => {
+            this.guide.alpha = 1;
+            this.closeGuide.alpha = 1;
+        }, this, 2, 1, 0);
+
+        this.closeGuide = game.add.button(screenWidth / 2 + 360, screenHeight / 2 - 295, 'closeGuide', () => {
+            this.guide.alpha = 0;
+            this.closeGuide.alpha = 0;
+        }, this, 2, 1, 0);
+        this.closeGuide.alpha = 0;
+
         emitter = game.add.emitter(0, 0, 75);
         emitter.makeParticles('particle');
         emitter.setAlpha(1, 0, 1000);
@@ -287,10 +332,78 @@ let main =
 
     update : function()
     {
+        game.world.bringToTop(this.fade);
         this.time += game.time.physicsElapsed;
         player.update();
 
         this.animation();
+        this.cursor += game.time.physicsElapsed;
+        if (this.cursor >= 1) this.cursor = 0;
+
+        if (game.input.activePointer.leftButton.isDown)
+            this.focus = null;
+        
+        this.nickname.text = username;
+        this.roomJoin_code_text.text = this.roomJoin_code_value;
+        this.roomJoin_password_text.text = this.roomJoin_password_value;
+        if (this.cursor >= 0.5)
+        {
+            if (this.focus == "nickname")
+                this.nickname.text = username + "|";
+            if (this.focus == "code")
+                this.roomJoin_code_text.text = this.roomJoin_code_value + "|";
+            if (this.focus == "password")
+                this.roomJoin_password_text.text = this.roomJoin_password_value + "|";
+        }
+
+        // input
+        if (game.input.keyboard.downDuration(189, 1)) // minus, underbar
+        {
+            if (this.focus == "nickname" && username.length < 15)
+                username += (game.input.keyboard.isDown(16)) ? "_" : "-";
+        }
+        if (game.input.keyboard.downDuration(32, 1)) // spacebar
+        {
+            if (this.focus == "nickname" && username.length < 15)
+                username += " ";
+        }
+        if (game.input.keyboard.downDuration(8, 1)) // backspacebar
+        {
+            if (this.focus == "nickname")
+                username = username.slice(0, username.length - 1);
+            if (this.focus == "code")
+                this.roomJoin_code_value = this.roomJoin_code_value.slice(0, this.roomJoin_code_value.length - 1);
+            if (this.focus == "password")
+                this.roomJoin_password_value = this.roomJoin_password_value.slice(0, this.roomJoin_password_value.length - 1);
+        }
+        for (let i = 65; i <= 90; i++) // alphabet
+        {
+            if (game.input.keyboard.downDuration(i, 1))
+            {
+                if (this.focus == "nickname" && username.length < 15)
+                    username += (game.input.keyboard.isDown(16)) ? String.fromCharCode(i) : String.fromCharCode(i).toLowerCase();
+            }
+        }
+        for (let i = 48; i <= 57; i++) // number
+        {
+            if (game.input.keyboard.downDuration(i, 1))
+            {
+                if (this.focus == "nickname" && username.length < 15)
+                    username += String.fromCharCode(i);
+                if (this.focus == "code" && this.roomJoin_code_value.length < 5)
+                {
+                    if (this.roomJoin_code_value == "-")
+                        this.roomJoin_code_value = "";
+                    this.roomJoin_code_value += String.fromCharCode(i);
+                }
+                if (this.focus == "password" && this.roomJoin_password_value.length < 5)
+                {
+                    if (this.roomJoin_password_value == "-")
+                        this.roomJoin_password_value = "";
+                    this.roomJoin_password_value += String.fromCharCode(i);
+                }
+            }
+        }
     },
 
     render : function()
@@ -329,6 +442,23 @@ let main =
             this.roomCreate_number_next.position.x = y + 280;
             this.roomCreate_number_previous.position.x = y + 260;
         }
+        if (this.openRoomJoin != 0)
+        {
+            //y=-7x^2+10.5x-3.5
+            let x = this.time - this.openRoomJoin;
+            if (x >= 1) x = 1;
+            let y = -7 * Math.pow(x, 2) + 10.5 * x - 3.5;
+            y = y * 100 + 320;
+
+            this.roomJoin_logo.position.x = screenWidth - y;
+            this.roomJoin_done.position.x = screenWidth - y - 5;
+            this.roomJoin_code.position.x = screenWidth - y;
+            this.roomJoin_code_input.position.x = screenWidth - y;
+            this.roomJoin_code_text.position.x = screenWidth - y;
+            this.roomJoin_password.position.x = screenWidth - y;
+            this.roomJoin_password_input.position.x = screenWidth - y;
+            this.roomJoin_password_text.position.x = screenWidth - y;
+        }
         if (this.fadeDisappear)
         {
             if (this.fade.alpha <= game.time.physicsElapsed * 2)
@@ -343,19 +473,27 @@ let main =
         }
         if (this.goToWaiting !== 0)
         {
-            this.fade.alpha = (((this.time - this.goToWaiting) * 3 > 1) ? 1 : (this.time - this.goToWaiting) * 3);
-            if (this.time - this.goToWaiting > 0.5)
+            if (roomid == -3 && this.isRandomRoom == false && this.time - this.goToWaiting > 0.15)
             {
-                if (this.isRandomRoom)
+                this.goToWaiting = 0;
+                this.fade.alpha = 0;
+            }
+            else
+            {
+                this.fade.alpha = (((this.time - this.goToWaiting) * 3 > 1) ? 1 : (this.time - this.goToWaiting) * 3);
+                if (this.time - this.goToWaiting > 0.5)
                 {
-                    roomid = -1;
-                    socket.emit('join', {access: 1});
-                    game.state.start('waiting');
-                }
-                else
-                {
-                    socket.emit('join', {access: 0, roomid: roomid, password: 0});
-                    game.state.start('waiting');
+                    if (this.isRandomRoom)
+                    {
+                        roomid = -1;
+                        socket.emit('join', {access: 1});
+                        game.state.start('waiting');
+                    }
+                    else
+                    {
+                        socket.emit('join', {access: 0, roomid: roomid, password: 0, username});
+                        game.state.start('waiting');
+                    }
                 }
             }
         }
@@ -394,14 +532,14 @@ let waiting =
 
     update : function()
     {
-    },
-
-    render : function()
-    {
         if (roomid != -1) {
             game.state.start('inGame');
             document.querySelector("#chat").setAttribute("class", "");
         }
+    },
+
+    render : function()
+    {
     }
 }
 
@@ -416,7 +554,7 @@ let inGame =
         game.stage.backgroundColor = '#f1f1f1';
         game.physics.startSystem(Phaser.Physics.ARCADE);    
         game.world.setBounds(0, 0, mapSize.x, mapSize.y);
-        this.tile = game.add.tileSprite(0, 0, mapSize.x, mapSize.y, 'background');
+        this.tile = game.add.tileSprite(0, 0, 5000, 5000, 'background');
         this.tile.tint = 0xffffff;
 
         this.minimap = game.add.image(screenWidth - 125, screenHeight - 125, 'minimap');
@@ -442,23 +580,30 @@ let inGame =
         leftEnemyText2 = game.add.text(screenWidth - 145, 198, "0", { font: "20px Arial", fill: "#cccccc"});
         leftEnemyText2.fixedToCamera = true;
 
-        player = new Player();
-        player.body.position.x = game.rnd.realInRange(0, mapSize.x);
-        player.body.position.y = game.rnd.realInRange(0, mapSize.y);
-        for (let i = 0; i < 4; i++)
-            player.addTail();
+        player = null;
 
         blocks.forEach(value => value.destroy());
         blocks = [];
 
         this.time = 0;
         this.breakCool = 0;
-        this.fade = game.add.tileSprite(0, 0, mapSize.x, mapSize.y, 'fade');
+        this.fade = game.add.tileSprite(0, 0, 5000, 5000, 'fade');
 
         win = game.add.image(screenWidth / 2, screenHeight / 2, 'win');
         win.fixedToCamera = true;
         win.anchor.setTo(0.5);
         win.visible = false;
+
+        topbar = game.add.text(screenWidth / 2, 50, "플레이어를 기다리는 중입니다 (1/4)",
+            { font: "bold 30px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle" });
+        topbar.setTextBounds(0, 0, 0, 0);
+        topbar.fontWeight = "bold";
+        topbar.fixedToCamera = true;
+
+        roomInfo = game.add.text(10, 10, "방코드: 1\n비밀번호: 12684",
+        { font: "bold 20px Arial", fill: "#000"});
+        roomInfo.fontWeight = "bold";
+        roomInfo.fixedToCamera = true;
 
         lose = game.add.image(screenWidth / 2, screenHeight / 2, 'lose');
         lose.fixedToCamera = true;
@@ -487,10 +632,20 @@ let inGame =
                 blocks.forEach(value => value.destroy());
                 blocks = [];
                 
-                roomid = -1;
-                game.state.start('waiting');
-                document.querySelector("#chat").setAttribute("class", "hide");
-                socket.emit('join', {access: 1});
+                if (roomPassword == "-")
+                {
+                    roomid = -1;
+                    game.state.start('waiting');
+                    document.querySelector("#chat").setAttribute("class", "hide");
+                    socket.emit('join', {access: 1});
+                }
+                else
+                {
+                    roomid = parseInt(lastedRoomid);
+                    socket.emit('join', {access: 0, roomid:parseInt(roomid), password: roomPassword, username});
+                    document.querySelector("#chat").setAttribute("class", "hide");
+                    game.state.start('waiting');
+                }
             }
         }, this, 2, 1, 0)
 
@@ -509,10 +664,6 @@ let inGame =
         emitter.maxParticleSpeed.setTo(250, 250);
         emitter.minParticleScale = 0.5;
         emitter.maxParticleScale = 1.2;
-
-        emitter.x = player.body.position.x;
-        emitter.y = player.body.position.y;
-        emitter.start(true, 1500, null, 10);
     },
 
     update : function()
@@ -520,7 +671,10 @@ let inGame =
         this.time += game.time.physicsElapsed;
         this.breakCool += game.time.physicsElapsed;
 
-        player.update();
+        if (player != null)
+            player.update();
+        if (roomid != -2) roomInfo.text = "방코드: " + roomid + "\n비밀번호: " + roomPassword;
+        if (roomid == -2 || player != null && player.isDead) topbar.text = "";
 
         this.animaiton();
         this.blockCollision();
@@ -552,8 +706,11 @@ let inGame =
         blocks.filter(element => element.type == 5).forEach(element => game.world.bringToTop(element));
 
         // 2층 : 플레이어
-        game.world.bringToTop(player.body);
-        player.tail.forEach(element => game.world.bringToTop(element));
+        if (player != null)
+        {
+            game.world.bringToTop(player.body);
+            player.tail.forEach(element => game.world.bringToTop(element));
+        }
 
         // 3층 : 적
         enemiesData.forEach(element1 => {
@@ -585,6 +742,8 @@ let inGame =
         game.world.bringToTop(regame);
         game.world.bringToTop(mainmenu);
         game.world.bringToTop(rank);
+        game.world.bringToTop(topbar);
+        game.world.bringToTop(roomInfo);
 
         // 7층 : 페이드
         game.world.bringToTop(this.fade);
@@ -1068,7 +1227,7 @@ class Enemy
         minimapAnchor.forEach(anchor => {
             anchor.destroy();
         })
-        enemiesData = []; 
+        enemiesData = [];
         minimapAnchor = [];
 
         // Save User's roomid
@@ -1129,7 +1288,7 @@ class Enemy
         this.id = data.id;
         if (foodChain.find(chain => (chain.hunter == socket.id)) != undefined && foodChain.find(chain => (chain.hunter == socket.id)).target == data.id)
         {
-            this.body.tint = 0xffe13a;
+            this.body.tint = 0xffff00;
             minimapAnchor[minimapAnchor.length - 1].tint = 0xffe13a;
         }
         else
@@ -1142,7 +1301,7 @@ class Enemy
             this.tail[index].scale.setTo(tail.scale.x, tail.scale.y);
             this.tail[index].rotation = game.physics.arcade.angleBetween(this.tail[index].position, (index == 0) ? this.body.position : this.tail[index - 1].position);
             if (foodChain.find(chain => (chain.hunter == socket.id)) != undefined && foodChain.find(chain => (chain.hunter == socket.id)).target == data.id)
-                this.tail[index].tint = 0xffe13a;
+                this.tail[index].tint = 0xffff00 + Math.round(255 * (index) / this.tail.length);
         });
 
         playerName[data.id] = data.username;
@@ -1155,10 +1314,35 @@ socket.on("update", function(data)
 {
     if (game.state.current == 'inGame' && roomid !== -2)
     {
-        map = data.room.map;
-        foodChain = data.room.foodchain;
-        status = data.room.status;
-        updateChat(data.room.chat);
+        if (data.room.option != null)
+        {
+            mapSize.x = data.room.option.mapSize;
+            mapSize.y = data.room.option.mapSize;
+            game.world.setBounds(0, 0, mapSize.x, mapSize.y);
+
+            if (player == null)
+            {
+                player = new Player();
+                player.body.position.x = game.rnd.realInRange(0, mapSize.x);
+                player.body.position.y = game.rnd.realInRange(0, mapSize.y);
+                for (let i = 0; i < 4; i++)
+                    player.addTail();
+
+                emitter.x = player.body.position.x;
+                emitter.y = player.body.position.y;
+                emitter.start(true, 1500, null, 10);
+            }
+    
+            map = data.room.map;
+            foodChain = data.room.foodchain;
+            status = data.room.status;
+            roomPassword = (data.room.option.password === null) ? "-" : data.room.option.password;
+            if (status == 0)
+                topbar.text = "플레이어를 기다리는 중입니다 (" + data.users.length + "/" + data.room.option.numberOfUsers + ")";
+            else if (status == 1)
+                topbar.text = playerName[foodChain.find(chain => chain.hunter == socket.id).target] + "님을 잡으세요!";
+            updateChat(data.room.chat);
+        }
     }
     if (game.state.current != 'main')
     {
@@ -1254,6 +1438,7 @@ socket.on("died", (data) => {
     emitter.start(true, 1500, null, 10);
 });
 socket.on("gameEnd", (value) => {
+    lastedRoomid = parseInt(roomid);
     roomid = -2;
     player.gameEnd(value);
 });
@@ -1266,6 +1451,21 @@ socket.on("roomCreated", (data) => {
     if (game.state.current == 'main')
     {
         roomid = data.roomid;
+    }
+});
+socket.on("joinSuccess", (data) => {
+    if (game.state.current == 'main')
+    {
+        roomid = data.roomid;
+    }
+});
+socket.on("joinFailed", (data) => {
+    if (game.state.current == 'main')
+    {
+        if (data.error == 1) alert("존재하지 않는 방입니다.");
+        if (data.error == 2) alert("비밀번호가 틀렸습니다.");
+        if (data.error == 3) alert("이미 시작한 방입니다.");
+        if (data.error == 4) alert("존재하지 않는 방입니다.");
     }
 });
 socket.on("gameStart", (data) => {
