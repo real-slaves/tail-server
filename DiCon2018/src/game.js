@@ -235,14 +235,14 @@ let main =
         this.roomCreate_object_previous = game.add.button(-1000, screenHeight/2 + 40, 'previous', () => {
             if (this.openRoomCreate && this.time - this.openRoomCreate >= 1)
             {
-                roomCreate_object_value = (roomCreate_object_value == 0) ? 50 : roomCreate_object_value - 5;
+                roomCreate_object_value = (roomCreate_object_value == 0) ? 40 : roomCreate_object_value - 5;
                 this.roomCreate_object_text.text = roomCreate_object_value;
             }
         }, this, 2, 1, 0)
         this.roomCreate_object_next = game.add.button(-1000, screenHeight/2 + 40, 'next', () => {
             if (this.openRoomCreate && this.time - this.openRoomCreate >= 1)
             {
-                roomCreate_object_value = (roomCreate_object_value == 50) ? 0 : roomCreate_object_value + 5;
+                roomCreate_object_value = (roomCreate_object_value == 40) ? 0 : roomCreate_object_value + 5;
                 this.roomCreate_object_text.text = roomCreate_object_value;
             }
         }, this, 2, 1, 0)
@@ -357,6 +357,11 @@ let main =
         }
 
         // input
+        if (game.input.keyboard.downDuration(13, 1)) // enter
+        {
+            if (this.focus == "code")
+                this.focus = "password";
+        }
         if (game.input.keyboard.downDuration(189, 1)) // minus, underbar
         {
             if (this.focus == "nickname" && username.length < 15)
@@ -675,7 +680,7 @@ let inGame =
             player.update();
         if (roomid != -2) roomInfo.text = "방코드: " + roomid + "\n비밀번호: " + roomPassword;
         if (roomid == -2 || player != null && player.isDead) topbar.text = "";
-
+        
         this.animaiton();
         this.blockCollision();
         this.setLayer();
@@ -1309,7 +1314,7 @@ class Enemy
 }
 
 // Socket IO
-let socket = io('http://tail-server-qhjjb.run.goorm.io');
+let socket = io('http://tux-nas.duckdns.org');
 socket.on("update", function(data)
 {
     if (game.state.current == 'inGame' && roomid !== -2)
@@ -1337,10 +1342,12 @@ socket.on("update", function(data)
             foodChain = data.room.foodchain;
             status = data.room.status;
             roomPassword = (data.room.option.password === null) ? "-" : data.room.option.password;
-            if (status == 0)
+            if (status == 0 && !player.isDead)
                 topbar.text = "플레이어를 기다리는 중입니다 (" + data.users.length + "/" + data.room.option.numberOfUsers + ")";
-            else if (status == 1)
-                topbar.text = playerName[foodChain.find(chain => chain.hunter == socket.id).target] + "님을 잡으세요!";
+            else if (status == 1 && !player.isDead) {
+                if (foodChain.length > 1)
+                    topbar.text = playerName[foodChain.find(chain => chain.hunter == socket.id).target] + "님을 잡으세요!";
+            }
             updateChat(data.room.chat);
         }
     }
