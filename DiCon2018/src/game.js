@@ -1314,7 +1314,7 @@ class Enemy
 }
 
 // Socket IO
-let socket = io('http://tux-nas.duckdns.org');
+let socket = io('http://198.13.39.251');
 socket.on("update", function(data)
 {
     if (game.state.current == 'inGame' && roomid !== -2)
